@@ -150,7 +150,7 @@ async def command(update,ctx,send_text):
     if cmd not in {'/tools','/calc','/web','/task','/tasks','/remind','/reminders'}:return False
     store=ctx.bot_data['store'];setup(store);args=ctx.args
     try:
-        if cmd=='/tools':reply='Tools: /calc 40*1.15 | /web https://example.com | /task add description | /tasks | /task done ID | /remind 20m description | /reminders | /reminders cancel ID. Public reading only; no accounts, purchases or external sends. Reminder delivery depends on the bot remaining online.'
+        if cmd=='/tools':reply='🧰 J’s tools\n\n🧮 Calculate\n“Calculate 18% of $85.”\n/calc 85*0.18\n\n🌐 Read a public webpage\n“Read this page: [your HTTPS link].”\n/web https://example.com\n\n✅ Tasks\n/tasks — open tasks\n/task add description\n/task done ID\n\n⏰ Reminders\n“Remind me in 20 minutes to stretch.”\n/remind 20m stretch\n/reminders — pending reminders\n/reminders cancel ID\n\n🧠 Memory & rules\n/memory — inspect and correct memory\n/openloops — unfinished commitments\n/rules — export operating rules\n\n🔎 Under the hood\n/status — runtime and capabilities\n/usage — model usage and cost estimate\n/trace — latest request activity\n/improvements — improvement backlog\n/autonomy — inspect code improvements\n/autonomy off — pause future builds\n\nTalk normally; commands are shortcuts.\nReminders require J to be online. Public-page reading supports no logged-in accounts.'
         elif cmd=='/calc':reply=calculate(' '.join(args))
         elif cmd=='/web':
             if len(args)!=1:raise ToolError('Use /web https://public-page-url')
