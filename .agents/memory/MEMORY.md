@@ -1,0 +1,1 @@
+- [Zep memory boundaries](zep-memory-boundaries.md) — new conversations only, no archives or Graphiti; privacy-first deletion of derived external context.

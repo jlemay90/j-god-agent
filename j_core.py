@@ -36,6 +36,8 @@ def upgrade_store(Base):
             self.execute('INSERT INTO processed(update_id) SELECT update_id FROM turns WHERE 1=1 ON CONFLICT DO NOTHING')
             from j_context import setup as setup_context
             setup_context(self)
+            from j_zep import setup as setup_zep
+            setup_zep(self)
 
         @contextlib.contextmanager
         def atomic(self):
@@ -170,7 +172,18 @@ def upgrade_store(Base):
                     'cost_estimate_incomplete':any(r[4] is None for r in rows),
                     'limits':'Local daily call cap; recorded-token threshold checked before each call. Not a provider dollar cap; in-flight calls can cross the token threshold.'}
 
-        def finalize(self, update_id, text, reply, changes, rule, trace):
+        def queue_zep_turn(self, transport, conversation_key, source_id, text, reply,
+                           user_timestamp=None, assistant_timestamp=None):
+            from j_zep import enqueue_turn
+            return enqueue_turn(self, transport, conversation_key, source_id, text, reply,
+                                user_timestamp, assistant_timestamp)
+
+        def reset_zep(self, source_id):
+            from j_zep import enqueue_reset
+            return enqueue_reset(self, source_id)
+
+        def finalize(self, update_id, text, reply, changes, rule, trace, *, user_timestamp=None,
+                     conversation_key='owner-private'):
             with self.atomic():
                 if self.seen(update_id):
                     return None
@@ -191,6 +204,8 @@ def upgrade_store(Base):
                 self.execute('INSERT INTO conversation_archive(update_id,user_text,reply,captured_at) VALUES (?,?,?,?) ON CONFLICT DO NOTHING', (update_id,text,reply,utcnow()))
                 self.execute('INSERT INTO processed(update_id) VALUES (?)', (update_id,))
                 self.execute('INSERT INTO traces(update_id,created,details) VALUES (?,?,?)', (update_id,utcnow(),json.dumps(trace)))
+                self.queue_zep_turn('telegram', conversation_key, 'telegram:'+str(update_id),
+                                    text, reply, user_timestamp)
                 self.execute('DELETE FROM turns WHERE update_id NOT IN (SELECT update_id FROM turns ORDER BY update_id DESC LIMIT 100)')
                 self.execute('DELETE FROM traces WHERE update_id NOT IN (SELECT update_id FROM traces ORDER BY update_id DESC LIMIT 100)')
                 return reply
@@ -213,6 +228,7 @@ def upgrade_store(Base):
                 with self.atomic():
                     for item in linked:
                         self.execute('DELETE FROM memories WHERE id=?', (item,))
+                    self.reset_zep('memory-delete:'+identity)
             return found
 
         def install_directive(self, addition):

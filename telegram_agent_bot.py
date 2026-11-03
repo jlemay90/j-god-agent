@@ -175,12 +175,13 @@ async def command(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     elif cmd == '/forget':
         # Destructive operation requires a second explicit command.
         if ctx.args != ['confirm']:
-            await message.reply_text('To delete stored conversation history, send /forget confirm. Rules are retained.')
+            await message.reply_text('To delete stored conversation history, send /forget confirm. This also clears shared Zep context across Telegram and Hub. Local rules and separate memories are retained.')
         else:
             with store.atomic():
                 store.execute('DELETE FROM turns')
                 store.execute('DELETE FROM conversation_archive')
-            await message.reply_text('Stored recent conversation and searchable archive deleted. Rules and separate memories are retained.')
+                store.reset_zep('history-forget:'+str(getattr(update,'update_id',time.time_ns())))
+            await message.reply_text('Stored recent conversation and searchable archive deleted. Zep context reset queued; Zep recall stays paused until cleanup succeeds. Rules and separate memories are retained. Telegram messages and provider backups are separate.')
     else:
         await message.reply_text('J is online. /status /memory /openloops /improvements /usage /trace show what is happening. Send text or a voice memo. Clear requests such as “From now on, keep answers under 100 words” update my rules. /rules exports them; /voiceon enables optional spoken replies; /forget manages history.')
 
@@ -237,7 +238,7 @@ async def shutdown(app):
 def main():
     logging.basicConfig(level=logging.WARNING)
     # Libraries can log token-bearing request URLs at INFO; leave them disabled.
-    for name in ('httpx', 'httpcore', 'google_genai', 'telegram'):
+    for name in ('httpx', 'httpcore', 'google_genai', 'telegram', 'zep_cloud'):
         logging.getLogger(name).setLevel(logging.CRITICAL)
     token, key = os.environ['TELEGRAM_BOT_TOKEN'], os.environ['GEMINI_API_KEY']
     owner_id = int(os.environ['ALLOWED_USER_ID'])
