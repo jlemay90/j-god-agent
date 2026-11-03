@@ -1,5 +1,5 @@
 packager.features.guessImports = false
-run = "env -u PYTHONPATH .venv/bin/python telegram_agent_bot.py"
+run = "sh start_j.sh"
 modules = ["python-3.12"]
 
 [nix]

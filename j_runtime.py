@@ -101,11 +101,23 @@ def brief(records):
 async def extra_command(update,ctx,send_text):
     message=update.effective_message
     cmd=message.text.split()[0].split('@')[0].lower()
-    if cmd not in {'/status','/memory','/openloops','/improvements','/usage','/trace'}:
+    if cmd not in {'/status','/memory','/openloops','/improvements','/usage','/trace','/autonomy'}:
         return False
     store=ctx.bot_data['store']
     args=ctx.args
-    if cmd=='/status':
+    if cmd=='/autonomy':
+        if args==['off']:
+            store.setting('builder_enabled','off')
+        elif args==['on']:
+            store.setting('builder_enabled','on')
+        elif args and args[0]=='run':
+            from j_builder import attempt
+            goal=' '.join(args[1:]) or 'Improve general retrieval relevance and common-language matching.'
+            app=__import__('types').SimpleNamespace(bot_data=ctx.bot_data)
+            await send_text(message,await attempt(app,goal))
+            return True
+        reply=json.dumps({'enabled':store.setting('builder_enabled')=='on','scope':'j_retrieval.py only','attempts_per_utc_day':1,'requires':'isolated regression tests and strict frozen-benchmark improvement','last_result':store.setting('builder_last_result'),'commands':'/autonomy on | off | run goal'},indent=2)
+    elif cmd=='/status':
         counts={}
         for m in store.memory_rows():
             counts[m['kind']]=counts.get(m['kind'],0)+1
@@ -116,7 +128,7 @@ async def extra_command(update,ctx,send_text):
             'rule_revision':store.directive()[0],'active_memories':counts,
             'recent_history_count':store.execute('SELECT COUNT(*) FROM turns').fetchone()[0],
             'capabilities':['Telegram private chat','Gemini text and voice transcription','durable memory','rule revisions','usage ledger','improvement backlog'],
-            'engineering_self_modification':False,'scheduled_background_work':False,
+            'engineering_self_modification':{'scope':'j_retrieval.py','enabled':store.setting('builder_enabled')=='on','last_result':store.setting('builder_last_result')},'scheduled_background_work':'One bounded retrieval build/day when enabled and an issue is queued',
             'daily_call_limit':int(os.getenv('J_DAILY_REQUEST_LIMIT','100')),
             'daily_recorded_token_threshold':int(os.getenv('J_DAILY_TOKEN_LIMIT','200000')),
             'recent_failure_categories':failures},indent=2)

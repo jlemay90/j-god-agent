@@ -184,13 +184,22 @@ async def on_error(update, ctx):
 
 
 async def startup(app):
+    store=app.bot_data['store']
+    if store.pg and not store.execute('SELECT pg_try_advisory_lock(?)',(app.bot_data['owner_id'],)).fetchone()[0]:
+        raise RuntimeError('Another bot instance holds the owner lock')
     app.bot_data['started'] = time.monotonic()
     app.bot_data['store'].install_directive(DIRECTIVE_V5)
     mirror(app.bot_data['store'])
+    from j_builder import loop
+    app.bot_data['builder_task']=asyncio.create_task(loop(app))
 
 
 
 async def shutdown(app):
+    task=app.bot_data.get('builder_task')
+    if task:
+        task.cancel()
+        await asyncio.gather(task,return_exceptions=True)
     await app.bot_data['ai'].aio.aclose()
     app.bot_data['ai'].close()
     app.bot_data['store'].db.close()
@@ -209,7 +218,7 @@ def main():
            .post_init(startup).post_shutdown(shutdown).build())
     app.bot_data.update(owner_id=owner_id, store=Store(),
                         ai=genai.Client(api_key=key, http_options=types.HttpOptions(timeout=60000)))
-    app.add_handler(CommandHandler(['start', 'help', 'rules', 'voiceon', 'voiceoff', 'forget', 'status', 'memory', 'openloops', 'improvements', 'usage', 'trace'], command))
+    app.add_handler(CommandHandler(['start', 'help', 'rules', 'voiceon', 'voiceoff', 'forget', 'status', 'memory', 'openloops', 'improvements', 'usage', 'trace', 'autonomy'], command))
     app.add_handler(MessageHandler((filters.TEXT & ~filters.COMMAND) | filters.VOICE, handle))
     app.add_error_handler(on_error)
     # Retain pending updates across a restart; deduplicate completed requests.

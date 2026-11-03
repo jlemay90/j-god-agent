@@ -61,13 +61,22 @@ def upgrade_store(Base):
             return [dict(zip(cols, r)) for r in self.execute(sql).fetchall()]
 
         def relevant(self, text, limit=12, max_chars=6500):
+            records=self.memory_rows()
+            ranking={}
+            try:
+                from j_ranker import scores
+                ranking=scores(records[:1000],text)
+            except Exception:
+                pass  # retain deterministic baseline if extension fails
             words = set(re.findall(r'\w{3,}', text.lower())) - {'the','and','that','this','with','what','have','for','you','are','can'}
             def score(m):
+                if m['id'] in ranking:
+                    return ranking[m['id']]
                 terms = set(re.findall(r'\w{3,}', (m['key']+' '+m['value']).lower()))
                 overlap = len(words & terms)
                 baseline = {'preference': 3, 'goal': 2, 'constraint': 2, 'commitment': 1}.get(m['kind'], 0)
                 return overlap*5 + baseline
-            candidates = sorted(self.memory_rows(), key=lambda m: (score(m), m['updated']), reverse=True)
+            candidates = sorted(records, key=lambda m: (score(m), m['updated']), reverse=True)
             selected, used = [], 0
             for m in candidates:
                 if score(m) <= 0 or len(selected) >= limit:
