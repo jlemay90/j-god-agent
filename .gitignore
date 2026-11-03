@@ -1,0 +1,13 @@
+.env
+.env.*
+.venv/
+__pycache__/
+*.pyc
+data/
+*.sqlite3
+*.sqlite3-*
+*.ogg
+*.wav
+*restoration*.json
+*audit-results*.json
+master_directive.md.tmp
