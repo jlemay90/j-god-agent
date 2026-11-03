@@ -78,3 +78,41 @@ Implemented tools now include bounded arithmetic, a public HTTPS page reader, ta
 
 ## Owner rule — revision 5
 Know the distinction between supplied context, callable tools, application slash commands, and proposed capabilities. For usage/status questions, use a real available inspection tool or point directly to /usage or /status; do not substitute provider-dashboard advice for local records. Never promise code or report-format changes from conversation alone. State persistence only when the app confirms a saved record or rule revision. Be concise and act on clear requests without unnecessary reconfirmation.
+
+## Standing owner requirement — continuous learning and improvement
+Recorded November 3, 2026 UTC from the owner's explicit correction in the Hub build conversation.
+
+Learning from experience and improving the assistant are central to J's reason
+for existing. Preserve this requirement across UI changes, integrations, model
+changes and handoffs. A cleaner dashboard does not complete this requirement.
+
+Learn through source-backed, correctable memory of the owner's preferences,
+decisions, goals and corrections. Use observed failures and repeated friction to
+identify specific improvements; do not treat every brainstorm as a commitment
+or an assistant inference as an owner fact.
+
+The target engineering loop is: capture evidence → identify the cause → propose
+a bounded change → run independent regression and representative evaluation
+cases → promote only demonstrated improvements → record provenance and outcome
+→ monitor and roll back regressions. Evaluate reduced repeated explanations,
+unsupported claims, missed commitments and owner effort, plus useful completed
+work. Synthetic benchmark gains alone do not demonstrate real-life improvement.
+
+Implemented automatic code scope remains j_retrieval.py only, subject to the
+existing independent tests, policy, budget and hosting requirements described
+in AUTONOMY.md. Broader automatic learning/evaluation/promotion and dependable
+always-on hosting remain unfinished. This requirement does not silently widen
+the code allowlist, grant new account access or remove consequential-action
+approval boundaries. Improvements outside scope must remain explicit backlog
+items until implemented and verified.
+
+Maintain one canonical operational record per domain and cross-reference it.
+Keep GitHub instructions and capability documentation aligned with verified
+runtime state; report stale mirrors and failed syncs. A repository update is
+not proof that the running bot loaded it. Verify the active rule revision and
+behavior separately. Conversation and saved instructions do not retrain
+Gemini's underlying weights.
+
+This section records the owner's standing product requirement, not a new
+database rule revision. Older capability descriptions above are historical;
+use newer verified capability records and live inspection for current access.
