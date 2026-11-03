@@ -69,10 +69,14 @@ class CoreTests(unittest.TestCase):
         with self.assertRaises(LimitReached): self.store.reserve_call('test','response',daily_requests=1)
         self.assertEqual(self.store.usage_summary()['total_tokens_recorded'],130)
         self.assertAlmostEqual(self.store.usage_summary()['estimated_usd_recorded'],.00007)
-    def test_unknown_usage_blocks_new_calls(self):
+    def test_unknown_usage_is_reported_and_call_capped(self):
         identity=self.store.reserve_call('test','response')
         self.store.finish_call(identity,None,'failed',12)
-        with self.assertRaises(LimitReached): self.store.reserve_call('test','response')
+        self.assertEqual(self.store.usage_summary()['calls_with_unknown_usage'],1)
+        self.assertTrue(self.store.usage_summary()['cost_estimate_incomplete'])
+        with self.assertRaises(LimitReached): self.store.reserve_call('test','response',daily_requests=1)
+        identity=self.store.reserve_call('test','response',daily_requests=2)
+        self.store.finish_call(identity,SimpleNamespace(prompt_token_count=1,candidates_token_count=1,thoughts_token_count=0,total_token_count=2),'completed',1)
         self.assertEqual(self.store.usage_summary()['calls_with_unknown_usage'],1)
     def test_token_threshold(self):
         identity=self.store.reserve_call('test','response')

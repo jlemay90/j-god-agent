@@ -1,3 +1,5 @@
+Current operator guide: QUICKSTART.md. The tools upgrade supersedes earlier capability descriptions below.
+
 # J continuity upgrade
 
 ## Implemented
@@ -20,9 +22,9 @@
   Records evidence references, expected benefit, risk, validation, status and counts.
   This does not execute engineering changes or scheduled background work.
 - Gemini usage metadata saved per call; token totals and estimated cost shown in
-  /usage. Reasoning/thinking counts are included when provided. Missing usage is
-  unknown, not zero, and blocks further model calls until UTC reset or explicit
-  /usage resume confirm. This acknowledgment retains unknown counts and possible
+  /usage. Reasoning/thinking counts are included when provided. Missing usage remains unknown and is flagged as incomplete; failed calls
+  still count toward the request cap. Transient provider failures no longer pause
+  all later calls for the day. This acknowledgment retains unknown counts and possible
   unrecorded charges; it does not fabricate usage.
 - Default local limits: 100 model calls per UTC day; stop starting calls once recorded
   daily tokens reach 200,000; 60,000 combined text input/context characters; 2,048

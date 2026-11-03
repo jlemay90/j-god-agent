@@ -22,7 +22,16 @@ ROOT = Path(__file__).resolve().parent
 LOG = logging.getLogger('j')
 
 
+class ToolRequest(BaseModel):
+    tool: str
+    argument: str = ''
+    text: str = ''
+    explicit: bool = False
+    evidence: str = ''
+
+
 class Turn(BaseModel):
+    tool_requests: list[ToolRequest] = Field(default_factory=list)
     memory_changes: list[MemoryChange] = Field(default_factory=list)
     improvement_category: str = ""
     reply: str
@@ -192,10 +201,28 @@ async def startup(app):
     mirror(app.bot_data['store'])
     from j_builder import loop
     app.bot_data['builder_task']=asyncio.create_task(loop(app))
+    from j_tools import setup,reminder_loop
+    setup(app.bot_data['store'])
+    app.bot_data['reminder_task']=asyncio.create_task(reminder_loop(app))
+    from telegram import BotCommand,BotCommandScopeChat
+    try:
+        await app.bot.set_my_commands([BotCommand(name,description) for name,description in [
+            ('tools','Show tools and examples'),('status','Inspect J runtime'),('memory','Review or correct durable memory'),
+            ('tasks','List open tasks'),('task','Add or complete a task'),('remind','Set a reminder: 20m stretch'),
+            ('reminders','List or cancel reminders'),('calc','Calculate arithmetic'),('web','Read a public HTTPS page'),
+            ('usage','Check model usage and cost estimate'),('trace','Inspect latest request'),('autonomy','Inspect or disable retrieval improvements'),('rules','Export current operating rules')
+        ]],scope=BotCommandScopeChat(chat_id=app.bot_data['owner_id']))
+    except Exception as exc:
+        app.bot_data['menu_last_error']=type(exc).__name__
+
 
 
 
 async def shutdown(app):
+    reminder=app.bot_data.get('reminder_task')
+    if reminder:
+        reminder.cancel()
+        await asyncio.gather(reminder,return_exceptions=True)
     task=app.bot_data.get('builder_task')
     if task:
         task.cancel()
@@ -218,7 +245,7 @@ def main():
            .post_init(startup).post_shutdown(shutdown).build())
     app.bot_data.update(owner_id=owner_id, store=Store(),
                         ai=genai.Client(api_key=key, http_options=types.HttpOptions(timeout=60000)))
-    app.add_handler(CommandHandler(['start', 'help', 'rules', 'voiceon', 'voiceoff', 'forget', 'status', 'memory', 'openloops', 'improvements', 'usage', 'trace', 'autonomy'], command))
+    app.add_handler(CommandHandler(['start', 'help', 'rules', 'voiceon', 'voiceoff', 'forget', 'status', 'memory', 'openloops', 'improvements', 'usage', 'trace', 'autonomy', 'tools', 'calc', 'web', 'task', 'tasks', 'remind', 'reminders'], command))
     app.add_handler(MessageHandler((filters.TEXT & ~filters.COMMAND) | filters.VOICE, handle))
     app.add_error_handler(on_error)
     # Retain pending updates across a restart; deduplicate completed requests.
