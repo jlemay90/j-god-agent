@@ -19,7 +19,7 @@ from j_eval import evaluate
 
 ROOT=Path(__file__).resolve().parent
 ALLOWED='j_retrieval.py'
-FROZEN=['j_core.py','telegram_agent_bot.py','master_directive.md','test_j_core.py','j_policy.py','j_ranker.py','test_j_retrieval.py','j_eval.py']
+FROZEN=['j_core.py','j_context.py','resource_catalog.json','telegram_agent_bot.py','master_directive.md','test_j_core.py','j_policy.py','j_ranker.py','test_j_retrieval.py','j_eval.py']
 
 class Candidate(BaseModel):
     skip: bool
