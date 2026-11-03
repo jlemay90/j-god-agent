@@ -114,6 +114,14 @@ def brief(records):
 async def extra_command(update,ctx,send_text):
     message=update.effective_message
     cmd=message.text.split()[0].split('@')[0].lower()
+    if cmd == '/repo':
+        from j_repository import run as repo_run, RepoError
+        try:
+            reply=await asyncio.to_thread(repo_run,' '.join(ctx.args) or 'status')
+        except RepoError as exc:
+            reply=str(exc)
+        await send_text(message,reply)
+        return True
     read_topics = {'/usage':'usage','/status':'status','/capabilities':'capabilities',
                    '/projects':'projects','/recall':'recall','/improvements':'improvements',
                    '/openloops':'tasks','/tasks':'tasks'}

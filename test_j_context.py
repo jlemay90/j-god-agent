@@ -60,7 +60,7 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(data['usage_today']['calls'], 1)
         self.assertTrue(data['usage_today']['cost_estimate_incomplete'])
         self.assertIn('recall', data['callable_tools'])
-        self.assertTrue(all(r['status'] in ('not_connected','reference_only') for r in data['external_resources']))
+        self.assertTrue(all(r['status'] in ('not_connected','reference_only','connected_via_workspace_git') for r in data['external_resources']))
         self.assertIn('unknown', report(self.s, 'usage'))
 
     def test_direct_read_routes_only_clear_requests(self):

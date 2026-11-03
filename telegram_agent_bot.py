@@ -209,7 +209,7 @@ async def startup(app):
     from telegram import BotCommand,BotCommandScopeChat
     try:
         await app.bot.set_my_commands([BotCommand(name,description) for name,description in [
-            ('tools','Show tools and examples'),('recall','Search retained Telegram history'),('capabilities','Map actual access and tools'),('projects','Show verified repository inventory'),('status','Inspect J runtime'),('memory','Review or correct durable memory'),
+            ('tools','Show tools and examples'),('repo','Inspect own source: status/files/read/sync'),('recall','Search retained Telegram history'),('capabilities','Map actual access and tools'),('projects','Show verified repository inventory'),('status','Inspect J runtime'),('memory','Review or correct durable memory'),
             ('tasks','List open tasks'),('task','Add or complete a task'),('remind','Set a reminder: 20m stretch'),
             ('reminders','List or cancel reminders'),('calc','Calculate arithmetic'),('web','Read a public HTTPS page'),
             ('usage','Check model usage and cost estimate'),('trace','Inspect latest request'),('autonomy','Inspect or disable retrieval improvements'),('rules','Export current operating rules')
@@ -247,7 +247,7 @@ def main():
            .post_init(startup).post_shutdown(shutdown).build())
     app.bot_data.update(owner_id=owner_id, store=Store(),
                         ai=genai.Client(api_key=key, http_options=types.HttpOptions(timeout=60000)))
-    app.add_handler(CommandHandler(['start', 'help', 'rules', 'voiceon', 'voiceoff', 'forget', 'status', 'memory', 'openloops', 'improvements', 'usage', 'trace', 'autonomy', 'tools', 'calc', 'web', 'task', 'tasks', 'remind', 'reminders', 'recall', 'capabilities', 'projects'], command))
+    app.add_handler(CommandHandler(['start', 'help', 'rules', 'voiceon', 'voiceoff', 'forget', 'status', 'memory', 'openloops', 'improvements', 'usage', 'trace', 'autonomy', 'tools', 'calc', 'web', 'task', 'tasks', 'remind', 'reminders', 'recall', 'capabilities', 'projects', 'repo'], command))
     app.add_handler(MessageHandler((filters.TEXT & ~filters.COMMAND) | filters.VOICE, handle))
     app.add_error_handler(on_error)
     # Retain pending updates across a restart; deduplicate completed requests.

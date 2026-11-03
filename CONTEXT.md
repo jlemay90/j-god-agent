@@ -59,3 +59,11 @@ a connection. Reuse the existing Hub as its source of truth if a bridge is added
 avoid creating independent copies of its tasks. Alternative model providers and
 uninterrupted hosting remain separate work. Historical sensitive records are not
 imported by this upgrade.
+
+
+## GitHub bridge follow-up
+
+The bounded workspace Git bridge is now active for the single Zeus repository.
+See BRIDGES.md for /repo commands, access boundaries and current improvement scope.
+The dated catalog remains metadata; source reads now use the separate repo tool.
+Hub, Drive, Gmail and Calendar remain unconnected to Zeus.

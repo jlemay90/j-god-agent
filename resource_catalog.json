@@ -75,8 +75,8 @@
   "external_resources": [
     {
       "name": "GitHub",
-      "status": "reference_only",
-      "note": "Repo metadata verified through ChatGPT connector; Zeus has no GitHub API credentials or repo-reading tool."
+      "status": "connected_via_workspace_git",
+      "note": "Bounded repo tool for jlemay90/j-god-agent: committed source reads and fetch main using existing Git authentication. No general GitHub API, repo edits, merges or deployment through this tool."
     },
     {
       "name": "J Command Hub",
