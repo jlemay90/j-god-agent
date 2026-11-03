@@ -71,6 +71,28 @@ def terms(text):
     return set(re.findall(r'\w{3,}', text.lower())) - STOP
 
 
+def direct_read(text):
+    """Only clear direct read requests; examples/quoted text stay conversational."""
+    first = re.split(r'[?!.]', text.strip(), maxsplit=1)[0].strip().lower()
+    first = re.sub(r'^(?:hey[ ,]+zeus[ ,:]*|please\s+)', '', first).strip()
+    if re.fullmatch(r'how much (?:have we|have i) (?:used|spent)(?: today)?', first):
+        return 'usage', ''
+    if re.fullmatch(r'(?:what is|what\x27s|show me|check) (?:our |my |the )?(?:usage|api usage|recorded cost)(?: today)?', first):
+        return 'usage', ''
+    choices = {'status':'status', 'your status':'status', 'capabilities':'capabilities',
+               'your tools':'capabilities', 'projects':'projects', 'repositories':'projects',
+               'open tasks':'tasks', 'reminders':'reminders', 'improvements':'improvements'}
+    for phrase, topic in choices.items():
+        if first in ('show me '+phrase, 'check '+phrase):
+            return topic, ''
+    if first in ('what can you do now', 'what tools can you use', 'what tools do you have'):
+        return 'capabilities', ''
+    match = re.fullmatch(r'(?:recall|search (?:our |my )?(?:telegram )?history for)\s+(.+)', first)
+    if match:
+        return 'recall', match.group(1)
+    return None
+
+
 def recall(store, query, limit=4, max_chars=4200):
     words = terms(query)
     if not words:

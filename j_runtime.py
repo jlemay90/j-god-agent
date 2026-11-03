@@ -8,7 +8,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 from google.genai import types
 from j_core import LimitReached, redact_secret
-from j_context import CONTEXT_CONTRACT, supplied_context, report as context_report
+from j_context import CONTEXT_CONTRACT, supplied_context, direct_read, report as context_report
 
 DIRECTIVE_V5 = '''
 ## J continuity and improvement commitments — v5
@@ -235,6 +235,18 @@ async def handle_turn(update,ctx,*,owner,send_text,generate,mirror,speak,Turn):
             return
         if redact_secret(text):
             await message.reply_text('That resembles a credential. I did not send it to Gemini or store it. Keep keys in Replit Secrets.')
+            return
+        direct=direct_read(text)
+        if direct:
+            topic,query=direct
+            reply=context_report(store,topic,started=ctx.bot_data.get('started',0),
+                                 chat_id=update.effective_chat.id,query=query)
+            trace={'update_id':update.update_id,'model':'none (local inspection)',
+                   'tool_actions':['local:'+topic],'usage_record_ids':[],
+                   'duration_ms':int((time.monotonic()-started)*1000)}
+            reply=store.finalize(update.update_id,text,reply,[],'',trace)
+            if reply is not None:
+                await send_text(message,reply)
             return
         version,directive=store.directive()
         retrieved=store.relevant(text)

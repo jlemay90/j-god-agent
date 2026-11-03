@@ -46,7 +46,9 @@ backups remain separate. No history was deleted during commissioning.
 - `/capabilities` distinguishes callable tools, commands and unavailable integrations.
 - `/projects` shows the dated repo inventory.
 - `/recall words` searches retained Telegram conversation.
-- Ordinary usage questions can be answered from fresh supplied state, with no
+- Clear direct usage/status/capability/recall requests can run locally without a
+  model call, even during a provider outage. Other usage questions can be answered
+  from fresh supplied state, with no
   additional model call. Explicit inspection requests can use the read-only tool.
 
 ## Remaining integration work

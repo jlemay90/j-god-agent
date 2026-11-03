@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import patch
 
 from telegram_agent_bot import Store, Turn
-from j_context import setup, recall, report, supplied_context
+from j_context import setup, recall, report, supplied_context, direct_read
 from j_runtime import handle_turn, extra_command
 from j_tools import requested_tools
 
@@ -62,6 +62,26 @@ class ContextTests(unittest.TestCase):
         self.assertIn('recall', data['callable_tools'])
         self.assertTrue(all(r['status'] in ('not_connected','reference_only') for r in data['external_resources']))
         self.assertIn('unknown', report(self.s, 'usage'))
+
+    def test_direct_read_routes_only_clear_requests(self):
+        self.assertEqual(direct_read('How much have we used today? Give me uncertainty.'), ('usage',''))
+        self.assertEqual(direct_read('Show me your status'), ('status',''))
+        self.assertEqual(direct_read('Recall orchard'), ('recall','orchard'))
+        self.assertIsNone(direct_read('For example: how much have we used today?'))
+        self.assertIsNone(direct_read('"How much have we used today?"'))
+        self.assertIsNone(direct_read('Maybe show me reminders later'))
+
+    def test_direct_inspection_does_not_call_model(self):
+        sent=[]
+        async def generate(*a, **k): raise AssertionError('No model call expected')
+        async def send(message,text): sent.append(text)
+        async def reply(text): sent.append(text)
+        update=NS(update_id=22,effective_message=NS(text='How much have we used today?',voice=None,reply_text=reply),effective_chat=NS(id=1))
+        ctx=NS(bot_data={'store':self.s,'started':time.monotonic()})
+        asyncio.run(handle_turn(update,ctx,owner=lambda *a:True,send_text=send,
+            generate=generate,mirror=lambda s:True,speak=None,Turn=Turn))
+        self.assertIn('Model calls:',sent[0])
+        self.assertEqual(self.s.usage_summary()['calls'],0)
 
     def test_model_receives_current_context_and_historical_source(self):
         self.add(10, 'orchard decision')
