@@ -60,7 +60,8 @@ No continuous hosting has been configured by this upgrade.
 
 ## Recovery
 A timestamped private_backups directory contains the pre-upgrade Python file,
-markdown export and SQLite snapshot. It is excluded from Git. Back up these files
+markdown export and canonical rules/history/settings snapshot. This workspace
+uses PostgreSQL; a JSON record snapshot was created without exporting credentials. It is excluded from Git. Back up these files
 securely; the database snapshot contains personal conversation records.
 Do not restore a database snapshot casually: it discards records written afterward.
 For code-only rollback, stop the bot, restore the backed-up Python file and restart.
@@ -72,3 +73,11 @@ The original bot ignores added tables; v5 directive revisions remain in the DB.
 - Retrieval quality evaluation, advanced semantic search only if justified.
 - More robust privacy scrubbing and provider-enforced budget controls.
 - Due dates, scheduling, reconciliation across external canonical project stores.
+
+## Replit environment fix
+Automatic import guessing installed an unrelated telegram package. It is disabled
+in .replit. The working bot runs from .venv with PYTHONPATH unset.
+Install using: env -u PYTHONPATH -u PIP_TARGET -u PIP_PREFIX PIP_CONFIG_FILE=/dev/null PIP_USER=false .venv/bin/python -m pip install -r requirements.txt
+Run using: env -u PYTHONPATH .venv/bin/python telegram_agent_bot.py
+PostgreSQL migration/transaction/replay tests also passed in connection-local
+temporary tables; no synthetic records were added to canonical tables.

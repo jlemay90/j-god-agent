@@ -1,8 +1,10 @@
-run = "python telegram_agent_bot.py"
+packager.features.guessImports = false
+run = "env -u PYTHONPATH .venv/bin/python telegram_agent_bot.py"
 modules = ["python-3.12"]
 
 [nix]
 channel = "stable-25_05"
+packages = ["libxcrypt", "postgresql"]
 
 [agent]
 expertMode = true
