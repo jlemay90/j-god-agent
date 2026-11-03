@@ -67,6 +67,18 @@ class MemoryChange(BaseModel):
 
 
 async def model_generate(ctx, contents, *, instruction, schema=None):
+    # Retry only transient provider server errors; every attempt reserves its own budget.
+    for attempt in range(2):
+        try:
+            return await _model_generate_once(ctx, contents, instruction=instruction, schema=schema)
+        except Exception as exc:
+            code = getattr(exc, 'code', None)
+            if attempt or type(exc).__name__ != 'ServerError' or not isinstance(code, int) or not 500 <= code < 600:
+                raise
+            await asyncio.sleep(2)
+
+
+async def _model_generate_once(ctx, contents, *, instruction, schema=None):
     store = ctx.bot_data['store']
     model = os.environ['GEMINI_MODEL']
     max_input = int(os.getenv('J_MAX_INPUT_CHARS','60000'))
