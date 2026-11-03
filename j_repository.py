@@ -7,7 +7,7 @@ from urllib.parse import urlsplit
 from j_core import redact_secret
 
 ROOT = Path(__file__).resolve().parent
-ALLOWED = frozenset('''telegram_agent_bot.py j_core.py j_runtime.py j_tools.py
+ALLOWED = frozenset('''j_hub.py test_j_hub.py hub_project_context.json telegram_agent_bot.py j_core.py j_runtime.py j_tools.py
 j_context.py j_repository.py j_retrieval.py j_policy.py j_ranker.py j_eval.py
 j_builder.py j_supervisor.py identity_masker.py counterfactual_auditor.py
 test_j_core.py test_j_context.py test_j_tools.py test_j_retrieval.py test_j_repository.py
