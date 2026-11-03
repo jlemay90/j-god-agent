@@ -1,6 +1,6 @@
 packager.features.guessImports = false
 run = "sh start_j.sh"
-modules = ["python-3.12"]
+modules = ["python-3.12", "postgresql-16"]
 
 [nix]
 channel = "stable-25_05"
