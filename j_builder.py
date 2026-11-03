@@ -142,7 +142,7 @@ async def attempt(app,goal,issue_id=None):
         if issue_id:
             s.execute('UPDATE improvements SET status=? WHERE id=?',(result['status'],issue_id))
     except Exception as exc:
-        result={'status':'failed','reason':type(exc).__name__,'details':'No generated patch applied. Inspect the local build policy and sandbox availability.'}
+        result={'status':'failed','reason':type(exc).__name__,'details':str(exc)[:250] if type(exc).__name__=='LimitReached' else 'No generated patch applied. Inspect the local build policy and sandbox availability.'}
         if issue_id: s.execute("UPDATE improvements SET status='failed' WHERE id=?",(issue_id,))
     result['day_utc']=day
     result['scope']=ALLOWED

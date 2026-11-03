@@ -135,7 +135,7 @@ def upgrade_store(Base):
                 rows = self.execute('SELECT total_tokens,outcome FROM usage WHERE day=?', (day,)).fetchall()
                 if len(rows) >= daily_requests:
                     raise LimitReached('Daily model request limit reached.')
-                if any(tokens is None and outcome != 'unknown_acknowledged' for tokens,outcome in rows):
+                if any(tokens is None and outcome not in ('unknown_acknowledged','reserved') for tokens,outcome in rows):
                     raise LimitReached('A previous call has unknown usage. Review /usage before allowing more calls.')
                 if sum(r[0] or 0 for r in rows) >= daily_tokens:
                     raise LimitReached('Daily recorded token threshold reached.')
