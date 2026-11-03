@@ -12,6 +12,13 @@ MAX_ATTEMPTS = 5
 MAX_BATCH = 20
 
 
+def _idempotency(operation, identity):
+    # Cloud validates UUIDv4 bits, not merely UUID syntax. Hash-derived stable
+    # bytes keep the same opaque key across retries and process restarts.
+    raw = hashlib.sha256(('zeus-zep:' + operation + ':' + identity).encode()).digest()[:16]
+    return str(uuid.UUID(bytes=raw, version=4))
+
+
 def _now():
     return dt.datetime.now(dt.timezone.utc).isoformat()
 
@@ -88,7 +95,8 @@ def _owner(store, client):
             raise
         user = client.user.create(
             user_id='j-owner-' + owner_key,
-            idempotency_key='j-owner-' + owner_key,
+            first_name='Owner',
+            idempotency_key=_idempotency('owner', owner_key),
         )
     user_uuid = getattr(user, 'uuid_', None) or getattr(user, 'uuid', None)
     graph_uuid = getattr(user, 'graph_uuid', None) or user_uuid
@@ -124,7 +132,7 @@ def _thread(store, client, transport, conversation_key, user_uuid):
         return thread_uuid
     result = client.thread.create(
         user_uuid=user_uuid,
-        idempotency_key='j-thread-' + thread_key,
+        idempotency_key=_idempotency('thread', thread_key),
     )
     thread_uuid = getattr(result, 'uuid_', None) or getattr(result, 'uuid', None)
     if not thread_uuid:
@@ -324,7 +332,7 @@ def _reset_owner(store, client, identity):
                 raise RuntimeError('Cannot confirm external owner identity for deletion')
     if user_uuid:
         try:
-            client.user.delete(user_uuid, idempotency_key='j-reset-' + identity)
+            client.user.delete(user_uuid, idempotency_key=_idempotency('reset', identity))
         except Exception as exc:
             if getattr(exc, 'status_code', None) != 404:
                 raise
@@ -373,7 +381,7 @@ def process_pending(store, *, limit=MAX_BATCH):
                         thread_uuid,
                         messages=messages,
                         ignore_roles=['assistant'],
-                        idempotency_key='j-ingest-' + identity,
+                        idempotency_key=_idempotency('ingest', identity),
                     )
                 else:
                     raise ValueError('Unknown Zep queue operation')

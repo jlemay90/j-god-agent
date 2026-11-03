@@ -23,3 +23,7 @@ externalPort = 80
 defaultBucketID = "replit-objstore-d8fce4e8-fa01-430d-9a22-c940b5b7de15"
 
 [workflows]
+
+[postMerge]
+path = "build_j.sh"
+timeoutMs = 180000

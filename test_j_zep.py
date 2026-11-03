@@ -34,6 +34,9 @@ class FakeZep:
         self.graph_queries = []
 
     def create_user(self, **kwargs):
+        if not kwargs.get('first_name'):
+            raise ValueError('Cloud v4 requires an owner display name')
+        assert uuid.UUID(kwargs['idempotency_key']).version == 4
         self.users.append(kwargs)
         return NS(uuid_='user-' + str(len(self.users)), graph_uuid='graph-' + str(len(self.users)))
 
@@ -49,10 +52,12 @@ class FakeZep:
         self.deletes.append(user_uuid)
 
     def create_thread(self, **kwargs):
+        assert uuid.UUID(kwargs['idempotency_key']).version == 4
         self.threads.append(kwargs)
         return NS(uuid_='thread-' + str(len(self.threads)))
 
     def add_messages(self, thread_uuid, **kwargs):
+        assert uuid.UUID(kwargs['idempotency_key']).version == 4
         self.calls.append((thread_uuid, kwargs))
         if self.fail:
             raise ProviderError('credential-bearing-provider-body-must-not-persist')
@@ -379,7 +384,8 @@ class ZepTests(unittest.TestCase):
         message = next(r for r in requests if r[1].endswith('/messages'))
         self.assertEqual([m['role'] for m in message[2]['messages']], ['user', 'assistant'])
         self.assertEqual(message[2]['messages'][0]['reference_time'], '2026-11-03T10:00:00+00:00')
-        self.assertTrue(message[3]['Idempotency-Key'].startswith('j-ingest-'))
+        self.assertEqual(str(uuid.UUID(message[3]['Idempotency-Key'])),
+                         message[3]['Idempotency-Key'])
 
 
 if __name__ == '__main__':
