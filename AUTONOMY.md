@@ -2,7 +2,7 @@
 Owner authorized code improvement on November 2, 2026.
 Active scope: j_retrieval.py only. Model receives its source and a sanitized goal.
 No access-control, credential, budget, deployment, or core-runtime file edits.
-One attempt per UTC day, shared Gemini usage ledger and existing request limits.
+One automatic attempt per UTC day, up to two model calls within that attempt for a policy/syntax repair; shared Gemini usage ledger and existing request limits. Commissioning checks are recorded in the same usage ledger.
 A five-minute worker checks for queued issues. It makes no model call when idle.
 
 Before promotion: restricted AST policy, 16 frozen regression tests in a bubblewrap
