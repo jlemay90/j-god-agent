@@ -134,6 +134,8 @@ def upgrade_store(Base):
         def reserve_call(self, model, purpose, daily_requests=100, daily_tokens=200000):
             day = utcnow()[:10]
             with self.atomic():
+                if self.pg:
+                    self.execute('SELECT pg_advisory_xact_lock(?)', (847102031,))
                 rows = self.execute('SELECT total_tokens,outcome FROM usage WHERE day=?', (day,)).fetchall()
                 if len(rows) >= daily_requests:
                     raise LimitReached('Daily model request limit reached.')

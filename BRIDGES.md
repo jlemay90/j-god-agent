@@ -74,3 +74,7 @@ chosen credential flow must be completed before claiming a working integration.
 ## Dated Hub project handoff (implemented)
 
 /hub fetches the approved GitHub main reference and reads only hub_project_context.json. Ordinary conversation receives this bounded validated snapshot with capture time, Hub revision and source commit. Over 24 hours old is labelled stale. A GitHub fetch does not query the live Hub or refresh the original snapshot. Canonical records stay in the Hub. No personal task/Pulse records, Hub writes, Drive/Gmail/Calendar access or new credentials are included. Live authenticated bridges remain unfinished.
+
+## Contextual Hub chat transport (staged, inactive)
+
+The Hub now has separate Today, Inbox and Build panels. j_web_bridge.py supplies an authenticated HTTP transport using existing Zeus rules, bounded durable memories and the metered Gemini path. It does not receive Telegram turns, write Telegram conversations, save memories/rules or send Telegram messages. Section-limited proposals require a visible Apply click in the Hub. HMAC signing requires a new server-only shared secret; no listener or secret was created during staging. Binding an external port and setting Site secrets require access activation. Backend default daily cap is 30 requests plus the shared model ledger. PostgreSQL model-call reservation now takes a transaction-level lock across transports. Live Gemini smoke check returned provider 503 despite the existing bounded retry; no working end-to-end connection is claimed.
