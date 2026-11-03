@@ -116,7 +116,7 @@ async def extra_command(update,ctx,send_text):
             app=__import__('types').SimpleNamespace(bot_data=ctx.bot_data)
             await send_text(message,await attempt(app,goal))
             return True
-        reply=json.dumps({'enabled':store.setting('builder_enabled')=='on','scope':'j_retrieval.py only','attempts_per_utc_day':1,'requires':'isolated regression tests and strict frozen-benchmark improvement','last_result':store.setting('builder_last_result'),'commands':'/autonomy on | off | run goal'},indent=2)
+        reply=json.dumps({'enabled':store.setting('builder_enabled')=='on','scope':'j_retrieval.py only','attempts_per_utc_day':1,'sandbox_provisioned':bool(store.setting('builder_sandbox') and Path(store.setting('builder_sandbox')).is_file()),'requires':'isolated regression tests and strict frozen-benchmark improvement','last_result':store.setting('builder_last_result'),'commands':'/autonomy on | off | run goal'},indent=2)
     elif cmd=='/status':
         counts={}
         for m in store.memory_rows():

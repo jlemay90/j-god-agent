@@ -89,7 +89,7 @@ def promote(source,baseline_hash,before,after,issue_id):
         git('worktree','remove','--force',str(work))
 
 
-async def attempt(app,goal,issue_id=None):
+async def _attempt(app,goal,issue_id=None,automatic=False):
     s=app.bot_data['store']
     day=datetime.datetime.now(datetime.timezone.utc).date().isoformat()
     if s.setting('builder_last_day')==day:
@@ -136,6 +136,8 @@ async def attempt(app,goal,issue_id=None):
                 result={'status':'rejected','reason':'No improvement on frozen synthetic retrieval benchmark','before':before,'after':after}
             else:
                 await asyncio.to_thread(sandbox_test,candidate.source,image)
+                if automatic and s.setting('builder_enabled')!='on':
+                    return 'Build promotion cancelled because autonomy was disabled.'
                 result=await asyncio.to_thread(promote,candidate.source,hashlib.sha256(current.encode()).hexdigest(),before,after,issue_id)
                 result['status']='applied'
                 s.setting('retrieval_tested_source',candidate.source)
@@ -151,14 +153,22 @@ async def attempt(app,goal,issue_id=None):
     return json.dumps(result,indent=2)
 
 
+async def attempt(app,goal,issue_id=None,automatic=False):
+    lock=app.bot_data.setdefault('builder_lock',asyncio.Lock())
+    if lock.locked():
+        return 'An autonomous build is already in progress.'
+    async with lock:
+        return await _attempt(app,goal,issue_id,automatic)
+
+
 async def loop(app):
     while True:
         try:
             s=app.bot_data['store']
             if s.setting('builder_enabled')=='on':
-                issue=s.execute("SELECT id,category FROM improvements WHERE status='proposed' ORDER BY updated LIMIT 1").fetchone()
+                issue=s.execute("SELECT id,category FROM improvements WHERE status='proposed' AND (LOWER(category) LIKE '%retriev%' OR LOWER(category) LIKE '%memory%' OR LOWER(category) LIKE '%recall%') ORDER BY updated LIMIT 1").fetchone()
                 if issue:
-                    await attempt(app,'Improve retrieval quality and robustness, considering this observed problem: '+issue[1],issue[0])
+                    await attempt(app,'Improve retrieval quality and robustness, considering this observed problem: '+issue[1],issue[0],automatic=True)
         except asyncio.CancelledError:
             raise
         except Exception as exc:

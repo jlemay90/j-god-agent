@@ -21,6 +21,16 @@ def validate(source):
         raise ValueError('score must take exactly memory, query; no decorators, annotations or defaults')
     if [a.arg for a in fn.args.args]!=['memory','query'] or any(a.annotation for a in fn.args.args):
         raise ValueError('Unsupported score signature')
+    helpers={n.name for n in ast.walk(tree) if isinstance(n,ast.FunctionDef) and n.name!='score'}
+    if len(helpers)>4:
+        raise ValueError('At most four pure helpers allowed')
+    graph={}
+    for fn_node in [n for n in ast.walk(tree) if isinstance(n,ast.FunctionDef)]:
+        graph[fn_node.name]={call.func.id for call in ast.walk(fn_node) if isinstance(call,ast.Call) and isinstance(call.func,ast.Name) and call.func.id in helpers}
+    def visit(name,path):
+        if name in path: raise ValueError('Recursive helpers forbidden')
+        for other in graph.get(name,set()): visit(other,path|{name})
+    for name in graph: visit(name,set())
     for node in ast.walk(tree):
         if isinstance(node,FORBIDDEN):
             raise ValueError('Unsupported language construct')
@@ -33,7 +43,7 @@ def validate(source):
             raise ValueError('Unsupported attribute/method')
         if isinstance(node,ast.Call):
             if isinstance(node.func,ast.Name):
-                if node.func.id not in BUILTINS:
+                if node.func.id not in BUILTINS | helpers:
                     raise ValueError('Unsupported function call')
             elif not isinstance(node.func,ast.Attribute):
                 raise ValueError('Indirect calls forbidden')
