@@ -114,6 +114,10 @@ def brief(records):
 async def extra_command(update,ctx,send_text):
     message=update.effective_message
     cmd=message.text.split()[0].split('@')[0].lower()
+    if cmd == '/hub':
+        from j_hub import report
+        await send_text(message, await asyncio.to_thread(report))
+        return True
     if cmd == '/repo':
         from j_repository import run as repo_run, RepoError
         try:
@@ -247,8 +251,12 @@ async def handle_turn(update,ctx,*,owner,send_text,generate,mirror,speak,Turn):
         direct=direct_read(text)
         if direct:
             topic,query=direct
-            reply=context_report(store,topic,started=ctx.bot_data.get('started',0),
-                                 chat_id=update.effective_chat.id,query=query)
+            if topic == 'hub':
+                from j_hub import report
+                reply = await asyncio.to_thread(report)
+            else:
+                reply=context_report(store,topic,started=ctx.bot_data.get('started',0),
+                                     chat_id=update.effective_chat.id,query=query)
             trace={'update_id':update.update_id,'model':'none (local inspection)',
                    'tool_actions':['local:'+topic],'usage_record_ids':[],
                    'duration_ms':int((time.monotonic()-started)*1000)}
