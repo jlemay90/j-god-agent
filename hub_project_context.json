@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "source": "https://j-command-hub.jlemay90.chatgpt.site",
+  "captured_at_utc": "2026-11-03T04:04:18.049Z",
+  "hub_revision": 7,
+  "scope": "Hub software project decisions and build roadmap only. No personal tasks, Daily Pulse, family, medical, financial or legal records.",
+  "live_sync": false,
+  "decisions": [
+    "Use shared memory and exports for continuity; this supplies context rather than retraining a model.",
+    "Core product direction proposal accepted for active evaluation: evolve J Command Hub from a task/status dashboard into a context-reactive personal command station that proactively surfaces what matters now, forgotten loose ends, and the smallest useful next move from existing trusted sources. Preserve one canonical source of truth rather than duplicating records.",
+    "Implement the context-reactive direction through a Resources control room, four-command Today launcher, source-traceable move context, six-queue overview, and recovery snapshot; preserve the existing Hub records and workflows.",
+    "Zeus uses one PostgreSQL source for its own rules, memories, usage and Telegram history; code lives in jlemay90/j-god-agent. Existing shared Hub and Drive records remain canonical for their own domains; a catalog entry is not a connected integration.",
+    "Supply Zeus with timestamped runtime state, actual callable tools, relevant local guidance skills, and source-labelled retained history on each conversational turn. Clear read-only usage/status/recall requests run locally without model calls.",
+    "Reuse existing workspace Git authentication for bounded Zeus source inspection: /repo status, sync (fetch only), files and read approved committed source. Keep general GitHub API, arbitrary edits/merges/deployments and all credentials outside the model-facing tool. Autonomous edits remain j_retrieval.py only.",
+    "Owner approved the focused opening screen and the broader proposed direction; execute one bounded step at a time while maintaining the ordered roadmap. Do not claim a bridge or learning capability until verified."
+  ],
+  "next_steps": [
+    "1. Completed: focused Today landing published November 2 Central; one move, reason, source, missing information, full-dashboard toggle and stale-brief fallback. Worker/API/MCP checks and three freshness scenarios passed; browser visual QA remains unverified.",
+    "2. Next: verify the focused view on desktop/mobile with live shared state; record actual friction.",
+    "3. Refresh the existing Daily Pulse from current canonical sources; read back and distinguish outdated obligations from confirmed current ones.",
+    "4. Define the Zeus-to-Hub bridge contract: owner authentication, minimal read scope, source/date provenance and failure behavior; reuse existing Hub records.",
+    "5. Implement and verify one read-only Zeus-to-Hub round trip using an ordinary Telegram question.",
+    "6. Add a narrowly scoped read-only Drive retrieval path to selected existing documents; verify source links, modification dates and access boundaries.",
+    "7. Verify one real obligation end-to-end: ask, retrieve, choose, act, report; measure repeated explanations and missing context.",
+    "8. Improve universal capture with routing suggestions and idempotent save/readback; writes remain separately scoped.",
+    "9. Build source-backed loose-end/recovery views, then situation-specific context packs and useful presentation formats from the same records.",
+    "10. Establish representative evaluation cases, outcome feedback, rollback and hosting reliability before expanding autonomous code changes."
+  ],
+  "limits": [
+    "This is a dated handoff, not a live Hub API connection.",
+    "No Hub writes or Drive/Gmail/Calendar access.",
+    "Source records stay canonical in the Hub; refresh this handoff after project changes."
+  ]
+}
