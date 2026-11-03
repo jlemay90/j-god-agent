@@ -141,6 +141,7 @@ async def _attempt(app,goal,issue_id=None,automatic=False):
                 result=await asyncio.to_thread(promote,candidate.source,hashlib.sha256(current.encode()).hexdigest(),before,after,issue_id)
                 result['status']='applied'
                 s.setting('retrieval_tested_source',candidate.source)
+                s.setting('builder_last_success',json.dumps(result))
         if issue_id:
             s.execute('UPDATE improvements SET status=? WHERE id=?',(result['status'],issue_id))
     except Exception as exc:
@@ -166,11 +167,11 @@ async def loop(app):
         try:
             s=app.bot_data['store']
             if s.setting('builder_enabled')=='on':
-                issue=s.execute("SELECT id,category FROM improvements WHERE status='proposed' AND (LOWER(category) LIKE '%retriev%' OR LOWER(category) LIKE '%memory%' OR LOWER(category) LIKE '%recall%') ORDER BY updated LIMIT 1").fetchone()
+                issue=s.execute("SELECT id,category FROM improvements WHERE status='proposed' AND (LOWER(category) LIKE ? OR LOWER(category) LIKE ? OR LOWER(category) LIKE ?) ORDER BY updated LIMIT 1",("%retriev%","%memory%","%recall%")).fetchone()
                 if issue:
                     await attempt(app,'Improve retrieval quality and robustness, considering this observed problem: '+issue[1],issue[0],automatic=True)
         except asyncio.CancelledError:
             raise
         except Exception as exc:
-            app.bot_data['store'].setting('builder_last_result',json.dumps({'status':'worker_error','class':type(exc).__name__}))
+            app.bot_data['store'].setting('builder_last_error',json.dumps({'status':'worker_error','class':type(exc).__name__}))
         await asyncio.sleep(300)
