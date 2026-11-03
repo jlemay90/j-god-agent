@@ -180,6 +180,7 @@ async def command(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             with store.atomic():
                 store.execute('DELETE FROM turns')
                 store.execute('DELETE FROM conversation_archive')
+                store.execute('DELETE FROM reply_outbox')
             await message.reply_text('Stored recent conversation and searchable archive deleted. Rules and separate memories are retained.')
     else:
         await message.reply_text('J is online. /status /memory /openloops /improvements /usage /trace show what is happening. Send text or a voice memo. Clear requests such as “From now on, keep answers under 100 words” update my rules. /rules exports them; /voiceon enables optional spoken replies; /forget manages history.')
@@ -256,3 +257,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

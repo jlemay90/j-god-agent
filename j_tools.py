@@ -139,7 +139,10 @@ async def reminder_tick(app):
 
 async def reminder_loop(app):
     while True:
-        try:await reminder_tick(app)
+        try:
+            from j_runtime import retry_replies
+            await retry_replies(app)
+            await reminder_tick(app)
         except asyncio.CancelledError:raise
         except Exception as exc:app.bot_data['reminder_last_error']=type(exc).__name__
         await asyncio.sleep(30)
@@ -221,3 +224,4 @@ async def requested_tools(requests,text,update,ctx):
             results.append(str(exc) if isinstance(exc,ToolError) else tool+' failed ('+type(exc).__name__+').')
             actions.append(tool+':failed')
     return '\n\n'.join(results),actions
+
