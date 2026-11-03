@@ -27,3 +27,7 @@ defaultBucketID = "replit-objstore-d8fce4e8-fa01-430d-9a22-c940b5b7de15"
 [postMerge]
 path = "build_j.sh"
 timeoutMs = 180000
+
+[deployment]
+deploymentTarget = "cloudrun"
+run = "sh start_j.sh"
