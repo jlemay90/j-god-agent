@@ -1,0 +1,112 @@
+{
+  "verified_at": "2026-11-03",
+  "repositories": [
+    {
+      "name": "spectrumwinback",
+      "url": "https://github.com/jlemay90/spectrumwinback",
+      "role": "Related repository; purpose requires source review",
+      "status": "Metadata verified; code not attached to Zeus",
+      "default_branch": "main"
+    },
+    {
+      "name": "SpectrumWBSite",
+      "url": "https://github.com/jlemay90/SpectrumWBSite",
+      "role": "Related repository; purpose requires source review",
+      "status": "Metadata verified; empty repository",
+      "default_branch": "main"
+    },
+    {
+      "name": "SpectrumWB",
+      "url": "https://github.com/jlemay90/SpectrumWB",
+      "role": "Related repository; purpose requires source review",
+      "status": "Metadata verified; code not attached to Zeus",
+      "default_branch": "main"
+    },
+    {
+      "name": "hermes",
+      "url": "https://github.com/jlemay90/hermes",
+      "role": "Related repository; purpose requires source review",
+      "status": "Metadata verified; empty repository",
+      "default_branch": "main"
+    },
+    {
+      "name": "personal-os-dashboard",
+      "url": "https://github.com/jlemay90/personal-os-dashboard",
+      "role": "Related repository; purpose requires source review",
+      "status": "Metadata verified; code not attached to Zeus",
+      "default_branch": "master"
+    },
+    {
+      "name": "Mannis-first-rep",
+      "url": "https://github.com/jlemay90/Mannis-first-rep",
+      "role": "Related repository; purpose requires source review",
+      "status": "Metadata verified; code not attached to Zeus",
+      "default_branch": "main"
+    },
+    {
+      "name": "chat-gpt-codex-test",
+      "url": "https://github.com/jlemay90/chat-gpt-codex-test",
+      "role": "Related repository; purpose requires source review",
+      "status": "Metadata verified; code not attached to Zeus",
+      "default_branch": "main"
+    },
+    {
+      "name": "mlb-edge",
+      "url": "https://github.com/jlemay90/mlb-edge",
+      "role": "Related repository; purpose requires source review",
+      "status": "Metadata verified; code not attached to Zeus",
+      "default_branch": "main"
+    },
+    {
+      "name": "PrjA1",
+      "url": "https://github.com/jlemay90/PrjA1",
+      "role": "Related repository; purpose requires source review",
+      "status": "Metadata verified; code not attached to Zeus",
+      "default_branch": "main"
+    },
+    {
+      "name": "j-god-agent",
+      "url": "https://github.com/jlemay90/j-god-agent",
+      "role": "Zeus Telegram runtime; canonical source code",
+      "status": "Metadata verified; code not attached to Zeus",
+      "default_branch": "main"
+    }
+  ],
+  "external_resources": [
+    {
+      "name": "GitHub",
+      "status": "reference_only",
+      "note": "Repo metadata verified through ChatGPT connector; Zeus has no GitHub API credentials or repo-reading tool."
+    },
+    {
+      "name": "J Command Hub",
+      "status": "not_connected",
+      "note": "Existing shared Hub is a separate canonical system. ChatGPT has a connector; Zeus does not. No live synchronization or imported personal records."
+    },
+    {
+      "name": "Google Drive / Docs",
+      "status": "not_connected",
+      "note": "Available through ChatGPT connectors; requires a separately authorized app integration for Zeus."
+    },
+    {
+      "name": "Gmail / Calendar",
+      "status": "not_connected",
+      "note": "ChatGPT-connected services do not automatically grant Zeus account access."
+    },
+    {
+      "name": "NotebookLM",
+      "status": "reference_only",
+      "note": "Knowledge-source workspace observed in browser; no Zeus source import or live connector verified."
+    },
+    {
+      "name": "ChatGPT skills / browser",
+      "status": "not_connected",
+      "note": "Host-specific skills and browser control belong to ChatGPT. Zeus has four local guidance skills; it cannot invoke ChatGPT tools."
+    },
+    {
+      "name": "Grok / OpenAI",
+      "status": "not_connected",
+      "note": "Alternative providers are not configured. Existing consumer subscriptions do not establish API entitlement."
+    }
+  ]
+}

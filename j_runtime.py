@@ -8,6 +8,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 from google.genai import types
 from j_core import LimitReached, redact_secret
+from j_context import CONTEXT_CONTRACT, supplied_context, report as context_report
 
 DIRECTIVE_V5 = '''
 ## J continuity and improvement commitments — v5
@@ -113,6 +114,15 @@ def brief(records):
 async def extra_command(update,ctx,send_text):
     message=update.effective_message
     cmd=message.text.split()[0].split('@')[0].lower()
+    read_topics = {'/usage':'usage','/status':'status','/capabilities':'capabilities',
+                   '/projects':'projects','/recall':'recall','/improvements':'improvements',
+                   '/openloops':'tasks','/tasks':'tasks'}
+    if cmd in read_topics and (not ctx.args or cmd == '/recall'):
+        await send_text(message, context_report(ctx.bot_data['store'], read_topics[cmd],
+            started=ctx.bot_data.get('started',0),
+            chat_id=getattr(getattr(update,'effective_chat',None),'id',None),
+            query=' '.join(ctx.args)))
+        return True
     from j_tools import command as tools_command
     if await tools_command(update,ctx,send_text):
         return True
@@ -236,8 +246,9 @@ async def handle_turn(update,ctx,*,owner,send_text,generate,mirror,speak,Turn):
                 break
             history.insert(0,item)
             used+=size
-        payload=json.dumps({'retrieved_memories':retrieved,'recent_conversation':history,'current_owner_message':text},ensure_ascii=False)
-        result=await generate(ctx,payload,instruction=directive+CONTRACT,schema=Turn)
+        application_context=supplied_context(store,text,ctx.bot_data.get('started',0),update.effective_chat.id)
+        payload=json.dumps({'application_context':application_context,'retrieved_memories':retrieved,'recent_conversation':history,'current_owner_message':text},ensure_ascii=False)
+        result=await generate(ctx,payload,instruction=directive+CONTRACT+CONTEXT_CONTRACT,schema=Turn)
         turn=Turn.model_validate_json(result.text or '')
         changes=[]
         for c in turn.memory_changes[:5]:
@@ -256,6 +267,8 @@ async def handle_turn(update,ctx,*,owner,send_text,generate,mirror,speak,Turn):
         trace={'update_id':update.update_id,'model':os.environ['GEMINI_MODEL'],
                'retrieved_memory_ids':[m['id'] for m in retrieved],
                'recent_turns_included':len(history),'rule_revision_used':version,
+               'recalled_update_ids':[h['update_id'] for h in application_context['relevant_past_turns']],
+               'application_context_at':application_context['snapshot_at_utc'],
                'tool_actions':(['Gemini transcription'] if message.voice else [])+tool_actions,
                'usage_record_ids':ctx.bot_data['turn_usage_ids'][:],
                'duration_ms':int((time.monotonic()-started)*1000)}

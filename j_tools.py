@@ -150,7 +150,7 @@ async def command(update,ctx,send_text):
     if cmd not in {'/tools','/calc','/web','/task','/tasks','/remind','/reminders'}:return False
     store=ctx.bot_data['store'];setup(store);args=ctx.args
     try:
-        if cmd=='/tools':reply='🧰 J’s tools\n\n🧮 Calculate\n“Calculate 18% of $85.”\n/calc 85*0.18\n\n🌐 Read a public webpage\n“Read this page: [your HTTPS link].”\n/web https://example.com\n\n✅ Tasks\n/tasks — open tasks\n/task add description\n/task done ID\n\n⏰ Reminders\n“Remind me in 20 minutes to stretch.”\n/remind 20m stretch\n/reminders — pending reminders\n/reminders cancel ID\n\n🧠 Memory & rules\n/memory — inspect and correct memory\n/openloops — unfinished commitments\n/rules — export operating rules\n\n🔎 Under the hood\n/status — runtime and capabilities\n/usage — model usage and cost estimate\n/trace — latest request activity\n/improvements — improvement backlog\n/autonomy — inspect code improvements\n/autonomy off — pause future builds\n\nTalk normally; commands are shortcuts.\nReminders require J to be online. Public-page reading supports no logged-in accounts.'
+        if cmd=='/tools':reply='🧰 J’s tools\n\n🧮 Calculate\n“Calculate 18% of $85.”\n/calc 85*0.18\n\n🌐 Read a public webpage\n“Read this page: [your HTTPS link].”\n/web https://example.com\n\n✅ Tasks\n/tasks — open tasks\n/task add description\n/task done ID\n\n⏰ Reminders\n“Remind me in 20 minutes to stretch.”\n/remind 20m stretch\n/reminders — pending reminders\n/reminders cancel ID\n\n🧠 Memory & rules\n/memory — inspect and correct memory\n/openloops — unfinished commitments\n/recall topic words — search retained history\n/rules — export operating rules\n\n🔎 Under the hood\n/status — runtime and capabilities\n/capabilities — actual tools and access map\n/projects — verified repo inventory\n/usage — model usage and cost estimate\n/trace — latest request activity\n/improvements — improvement backlog\n/autonomy — inspect code improvements\n/autonomy off — pause future builds\n\nTalk normally; commands are shortcuts.\nReminders require J to be online. Public-page reading supports no logged-in accounts.'
         elif cmd=='/calc':reply=calculate(' '.join(args))
         elif cmd=='/web':
             if len(args)!=1:raise ToolError('Use /web https://public-page-url')
@@ -195,7 +195,14 @@ async def requested_tools(requests,text,update,ctx):
         tool=request.tool
         if not request.explicit or not request.evidence or request.evidence not in text:continue
         try:
-            if tool=='calculate':
+            if tool in {'inspect','recall'}:
+                from j_context import report
+                topic=request.argument.strip().lower() if tool=='inspect' else 'recall'
+                if tool=='inspect' and topic not in {'usage','status','capabilities','projects','improvements','tasks','reminders'}:
+                    raise ToolError('Inspection supports usage, status, capabilities, projects, improvements, tasks or reminders')
+                result=report(ctx.bot_data['store'],topic,started=ctx.bot_data.get('started',0),
+                              chat_id=update.effective_chat.id,query=request.argument if tool=='recall' else '')
+            elif tool=='calculate':
                 result=request.argument+' = '+calculate(request.argument)
             elif tool=='read_page':
                 if request.argument not in text:raise ToolError('Provide the public HTTPS URL you want read')

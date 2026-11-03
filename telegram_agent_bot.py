@@ -177,8 +177,10 @@ async def command(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         if ctx.args != ['confirm']:
             await message.reply_text('To delete stored conversation history, send /forget confirm. Rules are retained.')
         else:
-            store.execute('DELETE FROM turns')
-            await message.reply_text('Stored conversation history deleted.')
+            with store.atomic():
+                store.execute('DELETE FROM turns')
+                store.execute('DELETE FROM conversation_archive')
+            await message.reply_text('Stored recent conversation and searchable archive deleted. Rules and separate memories are retained.')
     else:
         await message.reply_text('J is online. /status /memory /openloops /improvements /usage /trace show what is happening. Send text or a voice memo. Clear requests such as “From now on, keep answers under 100 words” update my rules. /rules exports them; /voiceon enables optional spoken replies; /forget manages history.')
 
@@ -207,7 +209,7 @@ async def startup(app):
     from telegram import BotCommand,BotCommandScopeChat
     try:
         await app.bot.set_my_commands([BotCommand(name,description) for name,description in [
-            ('tools','Show tools and examples'),('status','Inspect J runtime'),('memory','Review or correct durable memory'),
+            ('tools','Show tools and examples'),('recall','Search retained Telegram history'),('capabilities','Map actual access and tools'),('projects','Show verified repository inventory'),('status','Inspect J runtime'),('memory','Review or correct durable memory'),
             ('tasks','List open tasks'),('task','Add or complete a task'),('remind','Set a reminder: 20m stretch'),
             ('reminders','List or cancel reminders'),('calc','Calculate arithmetic'),('web','Read a public HTTPS page'),
             ('usage','Check model usage and cost estimate'),('trace','Inspect latest request'),('autonomy','Inspect or disable retrieval improvements'),('rules','Export current operating rules')
@@ -245,7 +247,7 @@ def main():
            .post_init(startup).post_shutdown(shutdown).build())
     app.bot_data.update(owner_id=owner_id, store=Store(),
                         ai=genai.Client(api_key=key, http_options=types.HttpOptions(timeout=60000)))
-    app.add_handler(CommandHandler(['start', 'help', 'rules', 'voiceon', 'voiceoff', 'forget', 'status', 'memory', 'openloops', 'improvements', 'usage', 'trace', 'autonomy', 'tools', 'calc', 'web', 'task', 'tasks', 'remind', 'reminders'], command))
+    app.add_handler(CommandHandler(['start', 'help', 'rules', 'voiceon', 'voiceoff', 'forget', 'status', 'memory', 'openloops', 'improvements', 'usage', 'trace', 'autonomy', 'tools', 'calc', 'web', 'task', 'tasks', 'remind', 'reminders', 'recall', 'capabilities', 'projects'], command))
     app.add_handler(MessageHandler((filters.TEXT & ~filters.COMMAND) | filters.VOICE, handle))
     app.add_error_handler(on_error)
     # Retain pending updates across a restart; deduplicate completed requests.

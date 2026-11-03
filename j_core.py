@@ -34,6 +34,8 @@ def upgrade_store(Base):
             self.execute('CREATE TABLE IF NOT EXISTS traces (update_id BIGINT PRIMARY KEY, created TEXT NOT NULL, details TEXT NOT NULL)')
             self.execute('CREATE TABLE IF NOT EXISTS processed (update_id BIGINT PRIMARY KEY)')
             self.execute('INSERT INTO processed(update_id) SELECT update_id FROM turns WHERE 1=1 ON CONFLICT DO NOTHING')
+            from j_context import setup as setup_context
+            setup_context(self)
 
         @contextlib.contextmanager
         def atomic(self):
@@ -184,6 +186,7 @@ def upgrade_store(Base):
                     reply += '\n\nMemory updated: '+', '.join(saved)
                 trace.update(saved_memory_ids=saved,rule_revision=revision)
                 self.execute('INSERT INTO turns(update_id,user_text,reply) VALUES (?,?,?)', (update_id,text,reply))
+                self.execute('INSERT INTO conversation_archive(update_id,user_text,reply,captured_at) VALUES (?,?,?,?) ON CONFLICT DO NOTHING', (update_id,text,reply,utcnow()))
                 self.execute('INSERT INTO processed(update_id) VALUES (?)', (update_id,))
                 self.execute('INSERT INTO traces(update_id,created,details) VALUES (?,?,?)', (update_id,utcnow(),json.dumps(trace)))
                 self.execute('DELETE FROM turns WHERE update_id NOT IN (SELECT update_id FROM turns ORDER BY update_id DESC LIMIT 100)')
