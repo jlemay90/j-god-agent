@@ -1,3 +1,4 @@
+run = "python telegram_agent_bot.py"
 modules = ["python-3.12"]
 
 [nix]
@@ -5,3 +6,9 @@ channel = "stable-25_05"
 
 [agent]
 expertMode = true
+
+[userenv]
+
+[userenv.shared]
+ALLOWED_USER_ID = "7918742805"
+GEMINI_MODEL = "gemini-3.1-flash-lite"

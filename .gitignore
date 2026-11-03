@@ -11,3 +11,6 @@ data/
 *restoration*.json
 *audit-results*.json
 master_directive.md.tmp
+
+private_backups/
+*.log
