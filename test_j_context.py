@@ -118,6 +118,31 @@ class ContextTests(unittest.TestCase):
             self.assertEqual(actions,['inspect'])
         asyncio.run(run())
 
+    def test_zep_context_survives_tool_reasoning_and_reply_is_durably_delivered(self):
+        captured, sent = [], []
+        async def generate(ctx, contents, **kwargs):
+            captured.append(json.loads(contents))
+            tools = [dict(tool='calculate', argument='2+2', explicit=True,
+                          evidence='calculate')] if len(captured) == 1 else []
+            return NS(text=json.dumps(dict(reply='The answer is 4.', tool_requests=tools,
+                explicit_rule_request=False, rule='', needs_clarification=False)))
+        async def send(message, text): sent.append(text)
+        async def reply(text): sent.append(text)
+        update = NS(update_id=900, effective_chat=NS(id=1), effective_message=NS(
+            text='Please calculate 2+2', voice=None, reply_text=reply))
+        ctx = NS(bot_data={'store':self.s, 'started':time.monotonic()})
+        with patch('j_runtime.retrieve_context_async', return_value='Synthetic historical reference'):
+            asyncio.run(handle_turn(update,ctx,owner=lambda *a:True,send_text=send,
+                generate=generate,mirror=lambda s:True,speak=None,Turn=Turn))
+        self.assertEqual(len(captured), 2)
+        self.assertTrue(all(c['zep_reference_context'] == 'Synthetic historical reference'
+                            for c in captured))
+        self.assertIn('4', captured[1]['tool_observations'][0]['result'])
+        self.assertEqual(sent, ['The answer is 4.'])
+        self.assertTrue(self.s.seen(900))
+        self.assertEqual(self.s.execute('SELECT COUNT(*) FROM reply_outbox').fetchone()[0], 0)
+        self.assertEqual(self.s.execute('SELECT COUNT(*) FROM zep_ingestion').fetchone()[0], 1)
+
     def test_forget_command_clears_archive_with_recent_history(self):
         from telegram_agent_bot import command
         self.add(1, 'orchard')

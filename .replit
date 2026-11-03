@@ -1,6 +1,6 @@
 packager.features.guessImports = false
 run = "sh start_j.sh"
-modules = ["python-3.12"]
+modules = ["python-3.12", "postgresql-16"]
 
 [nix]
 channel = "stable-25_05"
@@ -14,3 +14,20 @@ expertMode = true
 [userenv.shared]
 ALLOWED_USER_ID = "7918742805"
 GEMINI_MODEL = "gemini-3.1-flash-lite"
+
+[[ports]]
+localPort = 3000
+externalPort = 80
+
+[objectStorage]
+defaultBucketID = "replit-objstore-d8fce4e8-fa01-430d-9a22-c940b5b7de15"
+
+[workflows]
+
+[postMerge]
+path = "build_j.sh"
+timeoutMs = 180000
+
+[deployment]
+deploymentTarget = "cloudrun"
+run = "sh start_j.sh"

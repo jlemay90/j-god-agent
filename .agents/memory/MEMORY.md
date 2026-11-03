@@ -1,0 +1,2 @@
+- [Zep memory boundaries](zep-memory-boundaries.md) — new conversations only, no archives or Graphiti; privacy-first deletion of derived external context.
+- [Cloud request compatibility](zep-cloud-compatibility.md) — live Cloud requires UUIDv4 idempotency keys; permissive HTTP mocks missed invalid formats.
