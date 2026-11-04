@@ -39,6 +39,32 @@ def cached():
     except (RepoError, ValueError, KeyError, TypeError):
         return {"status":"unavailable", "live_sync":False, "note":"No validated Hub project handoff available. No live Hub or Drive access is implied."}
 
+
+def model_context():
+    """Historical handoffs cannot attest to current authenticated Hub state."""
+    value = cached()
+    metadata = {
+        "status": "unverified",
+        "live_sync": False,
+        "project_memory_revision": None,
+        "reference_only": True,
+        "note": "Current J Hub projectMemory revision is not live authenticated here.",
+    }
+    if value.get("status") != "dated_snapshot":
+        return metadata
+    metadata.update(
+        status="stale_snapshot_excluded" if value["stale"] else "historical_snapshot",
+        captured_at_utc=value["captured_at_utc"],
+        handoff_revision=value["hub_revision"],
+    )
+    # Do not feed obsolete roadmaps/decisions to the model as current project state.
+    if not value["stale"]:
+        metadata["historical_reference"] = {
+            key: value[key] for key in ("decisions", "next_steps", "limits")
+        }
+    return metadata
+
+
 def report(refresh=True):
     if refresh:
         try:
@@ -51,9 +77,10 @@ def report(refresh=True):
         return value["note"]
     return ("Hub project handoff — DATED SNAPSHOT, not live Hub access\n"
             + "Captured UTC: " + value["captured_at_utc"]
-            + "\nHub revision: " + str(value["hub_revision"])
+            + "\nHistorical handoff revision: " + str(value["hub_revision"])
+            + "\nCurrent J Hub projectMemory revision: unverified (no live authenticated source)."
             + "\nGit commit: " + value["source_commit"][:12]
             + "\nSource: " + SOURCE
-            + "\n" + ("STALE: over 24 hours old. Confirm current status." if value["stale"] else "Current handoff is under 24 hours old; Hub may have changed since capture.")
+            + "\n" + ("STALE: over 24 hours old. Confirm current status." if value["stale"] else "Snapshot is under 24 hours old; it is not live project state.")
             + "\n\nBuild roadmap:\n" + "\n".join(value["next_steps"])
             + "\n\nRead-only project snapshot. No Hub writes or Drive/Gmail/Calendar access.")

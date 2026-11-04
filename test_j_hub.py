@@ -33,4 +33,24 @@ class HubHandoffTests(unittest.TestCase):
             self.assertEqual(v["source_commit"],"a"*40)
             self.assertIn(("show","refs/remotes/origin/main:hub_project_context.json"),calls)
 
+    def test_stale_handoff_does_not_supply_old_decisions_or_live_revision(self):
+        value = self.valid()
+        value["captured_at_utc"] = (dt.datetime.now(dt.timezone.utc)-dt.timedelta(days=2)).isoformat()
+        value = j_hub.validate(json.dumps(value))
+        value["status"] = "dated_snapshot"
+        with patch("j_hub.cached", return_value=value):
+            context = j_hub.model_context()
+        self.assertEqual(context["status"], "stale_snapshot_excluded")
+        self.assertEqual(context["handoff_revision"], 7)
+        self.assertIsNone(context["project_memory_revision"])
+        self.assertNotIn("historical_reference", context)
+        self.assertNotIn("decisions", context)
+
+    def test_unavailable_hub_does_not_invent_project_memory_revision(self):
+        with patch("j_hub.cached", return_value={"status": "unavailable"}):
+            context = j_hub.model_context()
+        self.assertEqual(context["status"], "unverified")
+        self.assertIsNone(context["project_memory_revision"])
+        self.assertFalse(context["live_sync"])
+
 if __name__=="__main__":unittest.main()

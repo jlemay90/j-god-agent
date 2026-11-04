@@ -1,3 +1,4 @@
 - [Zep memory boundaries](zep-memory-boundaries.md) — new conversations only, no archives or Graphiti; privacy-first deletion of derived external context.
 - [Cloud request compatibility](zep-cloud-compatibility.md) — live Cloud requires UUIDv4 idempotency keys; permissive HTTP mocks missed invalid formats.
 - [Optional recall latency](zep-recall-budget.md) — bound remote recall wait and outstanding work; local fallback must not change durable ingestion retries.
+- [Hub conversation boundaries](hub-conversation-boundaries.md) — explicit owner-only chat messages, no note/task consumption or duplicate silo; verify connector capabilities first.
