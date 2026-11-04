@@ -6,10 +6,16 @@ import hashlib
 import json
 import os
 import uuid
+import concurrent.futures
+import threading
 
 CONTEXT_LIMIT = 3500
 MAX_ATTEMPTS = 5
 MAX_BATCH = 20
+RECALL_TIMEOUT = 1.0
+# No unbounded executor queue when a provider ignores its transport timeout.
+_recall_pool = concurrent.futures.ThreadPoolExecutor(max_workers=2, thread_name_prefix='zep-recall')
+_recall_slots = threading.BoundedSemaphore(2)
 
 
 def _idempotency(operation, identity):
@@ -63,7 +69,7 @@ def _safe_error(exc):
     if isinstance(status, int):
         return f'provider_{status}' if 400 <= status < 600 else 'provider_error'
     name = type(exc).__name__
-    if name in {'TimeoutException', 'ConnectTimeout', 'ReadTimeout'}:
+    if name in {'TimeoutError', 'TimeoutException', 'ConnectTimeout', 'ReadTimeout'}:
         return 'timeout'
     if name in {'ConnectError', 'NetworkError', 'RemoteProtocolError'}:
         return 'network_error'
@@ -165,9 +171,23 @@ def _fetch_context(graph_uuid, query):
         response = client.graph.get_context(
             graph_uuid, query=query[:4000], include_results=False,
             max_characters=CONTEXT_LIMIT,
+            request_options={'timeout_in_seconds': RECALL_TIMEOUT, 'max_retries': 0},
         )
         context = getattr(response, 'context', None) or ''
         return context[:CONTEXT_LIMIT] if isinstance(context, str) else ''
+
+
+def _submit_recall(graph_uuid, query):
+    slots = _recall_slots
+    if not slots.acquire(blocking=False):
+        return None
+    try:
+        future = _recall_pool.submit(_fetch_context, graph_uuid, query)
+    except BaseException:
+        slots.release()
+        raise
+    future.add_done_callback(lambda _: slots.release())
+    return future
 
 
 def retrieve_context(store, query):
@@ -176,7 +196,15 @@ def retrieve_context(store, query):
         graph_uuid = _context_graph(store)
         if not graph_uuid:
             return ''
-        result = _fetch_context(graph_uuid, query)
+        future = _submit_recall(graph_uuid, query)
+        if future is None:
+            store.setting('zep_last_error', 'recall_busy')
+            return ''
+        try:
+            result = future.result(timeout=RECALL_TIMEOUT)
+        except concurrent.futures.TimeoutError:
+            future.cancel()
+            raise
         return result if _context_graph(store) == graph_uuid else ''
     except Exception as exc:
         store.setting('zep_last_error', _safe_error(exc))
@@ -189,7 +217,15 @@ async def retrieve_context_async(store, query):
         graph_uuid = _context_graph(store)
         if not graph_uuid:
             return ''
-        result = await asyncio.to_thread(_fetch_context, graph_uuid, query)
+        future = _submit_recall(graph_uuid, query)
+        if future is None:
+            store.setting('zep_last_error', 'recall_busy')
+            return ''
+        try:
+            result = await asyncio.wait_for(asyncio.wrap_future(future), RECALL_TIMEOUT)
+        except BaseException:
+            future.cancel()
+            raise
         return result if _context_graph(store) == graph_uuid else ''
     except Exception as exc:
         store.setting('zep_last_error', _safe_error(exc))
