@@ -28,7 +28,21 @@ function zeusContext(state, panel) {
   const base = { schema: 1, section: panel, capturedAt: new Date().toISOString(), today: state.today };
   if (panel === 'today') return { ...base, chosenMove: state.checkins.find(x => x.date === state.today) ?? null, now: state.items.filter(x => !x.done && x.queue === 'Now').slice(0, 3), brief: state.pulse ? { date: state.pulse.date, stale: state.pulse.date !== state.today, summary: state.pulse.summary, nextAction: state.pulse.nextAction } : null };
   if (panel === 'inbox') return { ...base, items: state.items.filter(x => !x.done).slice(0, 30), truncated: state.items.filter(x => !x.done).length > 30 };
-  return { ...base, goal: state.goal, project: state.projectMemory };
+  // Only the model envelope is condensed; the canonical project record is never changed.
+  const project = state.projectMemory ?? null;
+  const short = value => typeof value === 'string' ? value.slice(0, 300) : '';
+  const concise = items => Array.isArray(items) ? items.slice(-6).map(short) : [];
+  const projectContext = project ? {
+    revision: project.revision ?? null,
+    updatedAt: project.updatedAt ?? null,
+    summary: short(project.summary),
+    decisions: concise(project.decisions),
+    backlog: concise(project.backlog),
+    nextSteps: concise(project.nextSteps),
+    contextIsExcerpt: true,
+    fullRecord: 'Canonical project record remains in private Hub storage. This model context is a bounded excerpt, not exhaustive.'
+  } : null;
+  return { ...base, goal: state.goal, project: projectContext };
 }
 async function zeusDigest(value) { return [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)))].map(x => x.toString(16).padStart(2, '0')).join(''); }
 async function zeusSignature(secret, timestamp, body) {

@@ -14,6 +14,8 @@ async function zeusRequest(path, input) {
 function zeusTurn(panel, box, turn) {
   const exchange = make('div', undefined, 'zeus-exchange');
   exchange.append(make('strong', 'You'), make('p', turn.message), make('strong', 'Zeus'), make('p', turn.reply));
+  const evidence = make('p', turn.applied ? 'Hub change saved with a Hub receipt. External outcomes still require separate verification.' : 'AI response received. No external action is verified by this reply alone.', 'hint zeus-evidence');
+  exchange.append(evidence);
   if (turn.proposal) {
     const proposal = make('div', undefined, 'zeus-proposal');
     proposal.append(make('small', 'Suggested change · nothing applied yet'), make('p', turn.proposal.value));
@@ -58,9 +60,13 @@ function mountZeus(panel, target, after = false) {
     try { recognition.start(); } catch { voiceHelp.textContent = 'Could not start the microphone. Try your keyboard microphone instead.'; }
   };
   document.addEventListener('visibilitychange', () => { if (document.hidden && listening) recognition.stop(); });
-  const notice = make('p', 'Replies are saved in this private Hub conversation. Zeus may recall shared memories, but full Telegram history is not shown here. Suggested changes need your click to apply.', 'hint');
+  const routeHelp = make('details', undefined, 'zeus-route-help');
+  routeHelp.append(make('summary', 'How J chooses the best agent or tool'));
+  routeHelp.append(make('p', 'For substantial requests, J should check the goal, available tools, access permissions, specialist alternatives, tradeoffs, and what evidence would prove completion. Simple questions should be answered directly. A named tool or agent is not automatically connected or executable from this Hub.', 'hint'));
+  routeHelp.append(make('p', 'Available means supported here; authorized means permitted for this request; configured does not mean live-tested; suggested means recommendation only; verified means supported by an actual result or receipt.', 'hint'));
+  const notice = make('p', 'Replies are saved in this private Hub conversation. Zeus may recall shared memories, but full Telegram history is not shown here. Suggested changes need your click to apply. A chat reply is not a receipt for outside work.', 'hint');
   const composeActions = make('div', undefined, 'voice-actions'); composeActions.append(voice, send);
-  form.append(label, composeActions, voiceHelp); details.append(scope, status, log, form, notice); card.append(details);
+  form.append(label, composeActions, voiceHelp); details.append(scope, status, routeHelp, log, form, notice); card.append(details);
   if (after) target.after(card); else target.append(card);
   const loadHistory = async () => {
     try { const data = await zeusRequest('/api/zeus/history?panel=' + panel); data.turns.forEach(turn => zeusTurn(panel, log, turn));  }
@@ -72,7 +78,7 @@ function mountZeus(panel, target, after = false) {
     const message = input.value.trim(); if (!message) return;
     let draft = zeusDrafts.get(panel);
     if (!draft || draft.message !== message) { draft = { message, requestId: crypto.randomUUID() }; zeusDrafts.set(panel, draft); }
-    send.disabled = true; input.disabled = true; status.textContent = 'Zeus is reading this section…';
+    send.disabled = true; input.disabled = true; status.textContent = 'J is evaluating the request and available route…';
     try {
       const data = await zeusRequest('/api/zeus/chat', { ...draft, panel });
       zeusTurn(panel, log, { ...data, message }); input.value = ''; zeusDrafts.delete(panel);
