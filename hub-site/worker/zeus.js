@@ -54,9 +54,12 @@ function zeusContext(state, panel, message = '') {
   };
   if (panel === 'inbox') {
     const important = open.filter(x => x.queue === 'Now').slice(0,3);
-    const recent = open.slice(-12);
-    return { ...base, items: [...new Map([...important, ...recent].map(x=>[x.id,x])).values()].slice(0,15).map(excerptItem),
-      truncated: open.length > 15 };
+    // readItems() returns newest first. Always include the newest open entries,
+    // and keep Now items even if they are older than the recent window.
+    const recent = open.slice(0,12);
+    const selected = [...new Map([...important, ...recent].map(x=>[x.id,x])).values()].slice(0,15);
+    return { ...base, items: selected.map(excerptItem),
+      truncated: selected.length < open.length };
   }
   const project = state.projectMemory ?? null, goal = state.goal ?? null;
   const projectContext = project ? {
