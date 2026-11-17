@@ -76,6 +76,23 @@ try {
   assert.ok(Buffer.byteLength(JSON.stringify(sent))<=12000,'payload should stay below safe budget');
   assert.ok(sent.history.length<=8,'history must be bounded');
   assert.equal(objects.get('hub/v1/project-memory.json'),originalStored,'canonical memory must remain intact');
+  // Regression: Inbox is newest-first and its truncated flag reflects omitted items.
+  const inboxFixtures=Array.from({length:13},(_,i)=>({
+    id:crypto.randomUUID(),type:'Task',queue:'Next',done:false,
+    text:'Inbox fixture '+i,createdAt:new Date(Date.now()+60000-i*1000).toISOString(),
+    updatedAt:new Date().toISOString()
+  }));
+  for(const item of inboxFixtures)objects.set('hub/v1/items/'+item.id+'.json',JSON.stringify(item));
+  const oldCount=captured.length;
+  const inboxProbe={panel:'inbox',requestId:crypto.randomUUID(),message:'Show my newest open tasks'};
+  assert.equal((await (await call('/api/zeus/chat',inboxProbe)).json()).ok,true);
+  assert.equal(captured.length,oldCount+1);
+  const inboxSent=captured.at(-1);
+  assert.ok(inboxSent.context.items.some(x=>x.id===inboxFixtures[0].id),'newest Inbox item should be present');
+  assert.ok(!inboxSent.context.items.some(x=>x.id===inboxFixtures.at(-1).id),'oldest Inbox item should be omitted');
+  assert.equal(inboxSent.context.truncated,true,'13+ entries with a 12-entry selection must be marked incomplete');
+  assert.ok(Buffer.byteLength(JSON.stringify(inboxSent))<=12000);
+
   // Existing authorization rules are unaffected.
   assert.ok(!('items' in sent.context),'Build may not receive Inbox item collection');
   env.ZEUS_BRIDGE_SECRET='';assert.equal((await call('/api/zeus/chat',{panel:'today',requestId:crypto.randomUUID(),message:'Help'})).status,503);
