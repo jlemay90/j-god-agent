@@ -56,7 +56,7 @@ function zeusContext(state, panel, message = '') {
     const important = open.filter(x => x.queue === 'Now').slice(0,3);
     const recent = open.slice(-12);
     return { ...base, items: [...new Map([...important, ...recent].map(x=>[x.id,x])).values()].slice(0,15).map(excerptItem),
-      truncated: open.length > 15, contextIsExcerpt: true };
+      truncated: open.length > 15 };
   }
   const project = state.projectMemory ?? null, goal = state.goal ?? null;
   const projectContext = project ? {
@@ -84,7 +84,7 @@ function zeusEnvelope(input, state, thread) {
   const envelope = { requestId: input.requestId, panel: input.panel, message: input.message,
     context: zeusContext(state, input.panel, input.message), history };
   const initialHistoryBytes = bytes(history);
-  while (bytes(envelope) > 16000 && envelope.history.length > 0) envelope.history.splice(0,2);
+  while (bytes(envelope) > 12000 && envelope.history.length > 0) envelope.history.splice(0,2);
   // Length-only diagnostics: no prompts, contents, personal records or credentials logged.
   console.info('zeus_payload_shape', JSON.stringify({
     panel: input.panel, messageBytes: bytes(input.message),
