@@ -45,6 +45,56 @@ try {
   assert.equal(otherReadback.zeusConversations.length,0,'connector conversation readback is owner scoped');
   const conflict=await rpc('ask_zeus',{...exchange,message:'Different text'});
   assert.equal(conflict.result.isError,true);assert.equal(calls,beforeCalls+1);
+  // Regression: large canonical Hub memory and panel history must not be pasted into a short message.
+  // This data intentionally exceeds the old worker's 28KB bridge envelope limit.
+  const oversizedMemory = {
+    summary: 'Historical project detail '.repeat(190),
+    decisions: Array.from({length:30},(_,i)=>'Decision '+i+': '+'Keep relevant provenance and approved protections. '.repeat(14)),
+    backlog: Array.from({length:29},(_,i)=>'Backlog '+i+': '+'Restore previous context carefully. '.repeat(18)),
+    nextSteps: Array.from({length:30},(_,i)=>'Step '+i+': '+'Avoid sending old prompts wholesale. '.repeat(19)),
+    revision:50,updatedAt:'2026-11-17T00:00:00.000Z'
+  };
+  const originalStored=JSON.stringify(oversizedMemory);
+  assert.ok(Buffer.byteLength(originalStored)>28000);
+  objects.set('hub/v1/project-memory.json',originalStored);
+  const ownerKey=Buffer.from(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('owner-1'))).toString('hex');
+  const staleHistory=Array.from({length:20},(_,i)=>({
+    requestId:crypto.randomUUID(),message:'Old instruction '+i+' '+'Do not repeat this. '.repeat(150),
+    reply:'Previous Zeus answer '+i+' '+'Old dialogue. '.repeat(220),
+    createdAt:new Date(Date.now()-i*1000).toISOString()
+  }));
+  objects.set('hub/v1/zeus/threads/'+ownerKey+'/build.json',JSON.stringify(staleHistory));
+  const beforeLarge=captured.length;
+  const small={panel:'build',requestId:crypto.randomUUID(),message:'hello'};
+  const healthy=await (await call('/api/zeus/chat',small)).json();
+  assert.equal(healthy.ok,true,'a short message should not fail due to stored context size');
+  assert.equal(captured.length,beforeLarge+1);
+  const sent=captured.at(-1);
+  assert.equal(sent.message,'hello','user message should never contain hidden instructions');
+  assert.equal(sent.context.project.revision,50);
+  assert.equal(sent.context.project.contextIsExcerpt,true);
+  assert.ok(Buffer.byteLength(JSON.stringify(sent))<=12000,'payload should stay below safe budget');
+  assert.ok(sent.history.length<=8,'history must be bounded');
+  assert.equal(objects.get('hub/v1/project-memory.json'),originalStored,'canonical memory must remain intact');
+  // Regression: Inbox is newest-first and its truncated flag reflects omitted items.
+  const inboxFixtures=Array.from({length:13},(_,i)=>({
+    id:crypto.randomUUID(),type:'Task',queue:'Next',done:false,
+    text:'Inbox fixture '+i,createdAt:new Date(Date.now()+60000-i*1000).toISOString(),
+    updatedAt:new Date().toISOString()
+  }));
+  for(const item of inboxFixtures)objects.set('hub/v1/items/'+item.id+'.json',JSON.stringify(item));
+  const oldCount=captured.length;
+  const inboxProbe={panel:'inbox',requestId:crypto.randomUUID(),message:'Show my newest open tasks'};
+  assert.equal((await (await call('/api/zeus/chat',inboxProbe)).json()).ok,true);
+  assert.equal(captured.length,oldCount+1);
+  const inboxSent=captured.at(-1);
+  assert.ok(inboxSent.context.items.some(x=>x.id===inboxFixtures[0].id),'newest Inbox item should be present');
+  assert.ok(!inboxSent.context.items.some(x=>x.id===inboxFixtures.at(-1).id),'oldest Inbox item should be omitted');
+  assert.equal(inboxSent.context.truncated,true,'13+ entries with a 12-entry selection must be marked incomplete');
+  assert.ok(Buffer.byteLength(JSON.stringify(inboxSent))<=12000);
+
+  // Existing authorization rules are unaffected.
+  assert.ok(!('items' in sent.context),'Build may not receive Inbox item collection');
   env.ZEUS_BRIDGE_SECRET='';assert.equal((await call('/api/zeus/chat',{panel:'today',requestId:crypto.randomUUID(),message:'Help'})).status,503);
 } finally {globalThis.fetch=originalFetch;}
 console.log('Zeus API: authentication, section isolation, proposal/apply, retries, owner isolation and offline state passed');

@@ -24,25 +24,77 @@ async function askZeusFromMcp(request, env, args) {
   return { ...result, source: 'Authenticated Zeus bridge', changesApplied: false };
 }
 function zeusSafeMessage(text) { return !/AIza[\w-]{20,}|\b\d{6,}:[\w-]{20,}|\bsk-[\w-]{16,}/.test(text); }
-function zeusContext(state, panel) {
+function zeusExcerpt(value, max = 260) {
+  return typeof value === 'string' ? value.slice(0, max) : '';
+}
+function zeusRelevant(entries, message, maxEntries, maxChars, label) {
+  const list = Array.isArray(entries) ? entries : [];
+  const stop = new Set(['hello','please','could','would','should','about','with','this','that','from','what','where','your','have','help']);
+  const words = new Set((String(message).toLowerCase().match(/[a-z0-9]{4,}/g) ?? []).filter(x => !stop.has(x)));
+  return list.map((value, index) => {
+    const text = zeusExcerpt(value, maxChars);
+    const match = (text.toLowerCase().match(/[a-z0-9]{4,}/g) ?? []).filter(x => words.has(x)).length;
+    return { text, index, match };
+  }).filter(x => x.text).sort((a,b) => b.match-a.match || b.index-a.index)
+    .slice(0,maxEntries).sort((a,b) => a.index-b.index)
+    .map(x => label + '[' + x.index + ']: ' + x.text);
+}
+function zeusContext(state, panel, message = '') {
+  // Context excerpts are NEVER written back; the Hub state remains canonical.
   const base = { schema: 1, section: panel, capturedAt: new Date().toISOString(), today: state.today };
-  if (panel === 'today') return { ...base, chosenMove: state.checkins.find(x => x.date === state.today) ?? null, now: state.items.filter(x => !x.done && x.queue === 'Now').slice(0, 3), brief: state.pulse ? { date: state.pulse.date, stale: state.pulse.date !== state.today, summary: state.pulse.summary, nextAction: state.pulse.nextAction } : null };
-  if (panel === 'inbox') return { ...base, items: state.items.filter(x => !x.done).slice(0, 30), truncated: state.items.filter(x => !x.done).length > 30 };
-  // Only the model envelope is condensed; the canonical project record is never changed.
-  const project = state.projectMemory ?? null;
-  const short = value => typeof value === 'string' ? value.slice(0, 300) : '';
-  const concise = items => Array.isArray(items) ? items.slice(-6).map(short) : [];
+  const excerptItem = x => ({ id: x.id, type: x.type, queue: x.queue, updatedAt: x.updatedAt,
+    text: zeusExcerpt(x.text, 240) });
+  const open = (state.items ?? []).filter(x => !x.done);
+  if (panel === 'today') return {
+    ...base,
+    chosenMove: state.checkins?.find(x => x.date === state.today) ?? null,
+    now: open.filter(x => x.queue === 'Now').slice(0,3).map(excerptItem),
+    brief: state.pulse ? { date: state.pulse.date, stale: state.pulse.date !== state.today,
+      summary: zeusExcerpt(state.pulse.summary, 850), nextAction: zeusExcerpt(state.pulse.nextAction, 250) } : null,
+  };
+  if (panel === 'inbox') {
+    const important = open.filter(x => x.queue === 'Now').slice(0,3);
+    // readItems() returns newest first. Always include the newest open entries,
+    // and keep Now items even if they are older than the recent window.
+    const recent = open.slice(0,12);
+    const selected = [...new Map([...important, ...recent].map(x=>[x.id,x])).values()].slice(0,15);
+    return { ...base, items: selected.map(excerptItem),
+      truncated: selected.length < open.length };
+  }
+  const project = state.projectMemory ?? null, goal = state.goal ?? null;
   const projectContext = project ? {
     revision: project.revision ?? null,
     updatedAt: project.updatedAt ?? null,
-    summary: short(project.summary),
-    decisions: concise(project.decisions),
-    backlog: concise(project.backlog),
-    nextSteps: concise(project.nextSteps),
+    summary: zeusExcerpt(project.summary, 450),
+    decisions: zeusRelevant(project.decisions, message, 6, 260, 'decision'),
+    backlog: zeusRelevant(project.backlog, message, 4, 230, 'backlog'),
+    nextSteps: zeusRelevant(project.nextSteps, message, 4, 230, 'nextStep'),
     contextIsExcerpt: true,
-    fullRecord: 'Canonical project record remains in private Hub storage. This model context is a bounded excerpt, not exhaustive.'
+    fullRecord: 'Complete versioned record remains in private Hub storage; this is reference data.',
   } : null;
-  return { ...base, goal: state.goal, project: projectContext };
+  const goalContext = goal ? {
+    title: zeusExcerpt(goal.title, 130), why: zeusExcerpt(goal.why, 250),
+    measure: zeusExcerpt(goal.measure, 180), nextStep: zeusExcerpt(goal.nextStep, 220),
+  } : null;
+  return { ...base, goal: goalContext, project: projectContext };
+}
+function zeusEnvelope(input, state, thread) {
+  const bytes = x => new TextEncoder().encode(JSON.stringify(x)).length;
+  const history = thread.slice(-3).flatMap(t => [
+    { role: 'user', text: zeusExcerpt(t.message, 500) },
+    { role: 'assistant', text: zeusExcerpt(t.reply, 750) },
+  ]);
+  const envelope = { requestId: input.requestId, panel: input.panel, message: input.message,
+    context: zeusContext(state, input.panel, input.message), history };
+  const initialHistoryBytes = bytes(history);
+  while (bytes(envelope) > 12000 && envelope.history.length > 0) envelope.history.splice(0,2);
+  // Length-only diagnostics: no prompts, contents, personal records or credentials logged.
+  console.info('zeus_payload_shape', JSON.stringify({
+    panel: input.panel, messageBytes: bytes(input.message),
+    contextBytes: bytes(envelope.context), historyBytes: bytes(envelope.history),
+    totalBytes: bytes(envelope), historyTrimmed: initialHistoryBytes !== bytes(envelope.history),
+  }));
+  return envelope;
 }
 async function zeusDigest(value) { return [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)))].map(x => x.toString(16).padStart(2, '0')).join(''); }
 async function zeusSignature(secret, timestamp, body) {
@@ -126,9 +178,8 @@ async function zeusApi(request, env, path) {
   const threadKey = ZEUS_PREFIX + 'threads/' + ownerKey + '/' + input.panel + '.json';
   const thread = await readObject(storage, threadKey) ?? [];
   if (!saved) {
-    const context = zeusContext(await readState(storage), input.panel);
-    const envelope = { requestId: input.requestId, panel: input.panel, message, context, history: thread.slice(-4).flatMap(t => [{ role: 'user', text: t.message }, { role: 'assistant', text: t.reply }]) };
-    if (new TextEncoder().encode(JSON.stringify(envelope)).length > 28000) return error('This section contains too much context. Shorten the project record first.', 413);
+    const envelope = zeusEnvelope({ requestId: input.requestId, panel: input.panel, message }, await readState(storage), thread);
+    if (new TextEncoder().encode(JSON.stringify(envelope)).length > 28000) return error('Zeus request exceeds the safe context budget. Your stored memories are unchanged.', 413);
     saved = { panel: input.panel, message, envelope, createdAt: new Date().toISOString() }; await writeObject(storage, key, saved);
   }
   try {
