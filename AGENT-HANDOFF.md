@@ -36,7 +36,7 @@ Proposed only, on the branch:
 ## Tests / evidence
 
 - Local Node.js v22.16.0, command: node --test .agents/coordination/preflight.test.mjs
-- Local matching implementation before GitHub upload: 10 passed, 0 failed.
+- Local matching implementation before GitHub upload: 10 passed, 0 failed. Post-upload Git blob SHA comparisons verified both committed executable files exactly match those locally tested (preflight.mjs 1e20d28523d14f8ca105d9c0d25fb2a1c68aaad7; preflight.test.mjs a7604fb1a6fd6ab92ba9a6bfa090dfb629861df8).
 - Synthetic only: tests simulated independent Agent A/Agent B claims, same-file conflicts, stale Git and Hub revisions, missing state/handoff, unauthorized deployment, malformed claims.
 - Not yet verified: CI execution of PR commit, real two-agent execution, atomic claims/leases, protected branch checks, merge gates, actual Hub revision guards, rollback behavior and production authentication.
 
@@ -54,4 +54,4 @@ Proposed only, on the branch:
 2. Request owner review of the draft. Only with further authorization should the next agent design and test an authoritative shared claim ledger with atomic revision guards and protected merge checks.
 3. Subsequently run two **actual** agents, including a deliberate collision and stale Hub revision; prove both histories survive and no live deployment occurs without owner approval.
 
-No branches other than this isolated branch were modified. No merge, deploy, secret transfer, Hub write, or external message occurred.
+Only the approved public GitHub branch and draft PR were created. No other branch modification, merge, deployment, secret transfer, Hub write, or outbound message was performed.
