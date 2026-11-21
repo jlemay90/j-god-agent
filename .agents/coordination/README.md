@@ -18,7 +18,7 @@ Requires Node.js 20+. From the repository root:
 
 Proposal fields: agent, task, isolated branch (prefix agent/), action set to "propose", a real 40-character baseSha, explicit files, recordUpdates with key/expectedRevision for Hub changes, and a handoff with summary, tests, unknowns and nextStep.
 
-Verified-state fields: currentBaseSha from a fresh Git read, activeClaims listing branch/status/files, and recordRevisions from an authenticated source. The preflight refuses missing claims/revisions but **cannot authenticate** a snapshot supplied by an agent.
+Verified-state fields: currentBaseSha from a fresh Git read, activeClaims listing branch/status/files, and recordRevisions from an authenticated source. Claim statuses must be explicitly active (`claimed`, `in_progress`, `proposed`, `review`) or terminal (`merged`, `closed`, `abandoned`, `released`); unrecognized or empty statuses fail closed (`UNKNOWN_CLAIM_STATUS`) rather than bypassing conflict checks. The preflight refuses missing claims/revisions but **cannot authenticate** a snapshot supplied by an agent.
 
 ## Required before actual parallel writes
 

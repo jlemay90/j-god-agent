@@ -72,3 +72,36 @@ test('Malformed active claims fail closed rather than silently passing', () => {
   const s = state(); s.activeClaims.push(null);
   blocked(evaluateProposal(proposal(), s), 'UNKNOWN_CLAIM');
 });
+
+test('Unknown or ambiguous claim statuses fail closed and block overlapping work', () => {
+  for (const status of ['in-progress', 'active', '']) {
+    const p = proposal(); p.files = ['hub-site/worker/zeus.js'];
+    const s = state(); s.activeClaims[0].status = status;
+    blocked(evaluateProposal(p, s), 'UNKNOWN_CLAIM_STATUS');
+  }
+});
+
+test('Recognized terminal claim statuses bypass conflict detection cleanly', () => {
+  for (const status of ['merged', 'closed', 'abandoned', 'released']) {
+    const p = proposal(); p.files = ['hub-site/worker/zeus.js'];
+    const s = state(); s.activeClaims[0].status = status;
+    assert.deepEqual(evaluateProposal(p, s), { status: 'PASS', blockers: [] });
+  }
+});
+
+test('Empty active claim file scopes fail closed', () => {
+  const s = state(); s.activeClaims[0].files = [];
+  blocked(evaluateProposal(proposal(), s), 'UNKNOWN_CLAIM_SCOPE');
+});
+
+test('Null recordUpdates and empty record update keys fail closed', () => {
+  const pNull = proposal(); pNull.recordUpdates = null;
+  blocked(evaluateProposal(pNull, state()), 'INVALID_RECORD_UPDATES');
+  const pEmptyKey = proposal(); pEmptyKey.recordUpdates = [{ key: '   ', expectedRevision: 7 }];
+  blocked(evaluateProposal(pEmptyKey, state()), 'INVALID_RECORD_UPDATE');
+});
+
+test('Git SHA comparison accepts equivalent hex casing', () => {
+  const p = proposal(); p.baseSha = A.toUpperCase();
+  assert.deepEqual(evaluateProposal(p, state()), { status: 'PASS', blockers: [] });
+});

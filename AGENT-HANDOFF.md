@@ -1,14 +1,14 @@
 # AGENT-HANDOFF — J Command OS multi-agent coordination
 
-Updated: 2026-11-17 (America/Chicago)
-Status: DRAFT / unmerged / not deployed
+Updated: 2026-11-21 (America/Chicago)
+Status: DRAFT / locally committed on agent/coordination-preflight-20261117 / not pushed, merged, or deployed
 Canonical engineering issue: https://github.com/jlemay90/j-god-agent/issues/2
 Review PR: https://github.com/jlemay90/j-god-agent/pull/5
 Repo: https://github.com/jlemay90/j-god-agent
 Working branch: agent/coordination-preflight-20261117
 Starting main SHA: a983463a153b6215150509b084325b10c1baf97e
-Last verified implementation SHA (before this handoff commit): a5e128c12ccd2dfb2f644dc5ed34849b2bb939b4
-Original project baseline / last accepted deployed Sites SHA: NOT ESTABLISHED. This is not a live deployment branch.
+Prior upstream PR #5 SHA: 615208d52a8d1e2454c640bce2a6d50c1d521c08
+Original project baseline / last accepted deployed Sites SHA: NOT ESTABLISHED in this Python repo (live Sites frontend separately captured on 2026-11-21 with INDEX_HTML SHA-256 C6292199FF84902FF37B1E60CB972CCC3683A3D52E9FDEF6F1E8F002506AF527).
 
 ## Owner goal and current scope
 
@@ -28,16 +28,16 @@ Do not introduce a rival canonical policy, new private memory database, or publi
 ## What changed
 
 Proposed only, on the branch:
-- .agents/coordination/preflight.mjs — pure read-only guard for exact file claims, Git baseline SHA, Hub revision map, handoff requirements, input safety, and no direct deploy.
-- .agents/coordination/preflight.test.mjs — ten deterministic synthetic agent proposals and failure scenarios.
-- .agents/coordination/README.md — usage and explicit limits.
+- .agents/coordination/preflight.mjs — pure read-only guard for exact file claims, Git baseline SHA, Hub revision map, handoff requirements, input safety, and no direct deploy. **Nov 21 fix:** replaced fail-open `if (!ACTIVE.has(claim.status)) continue;` with explicit `TERMINAL` (`merged`, `closed`, `abandoned`, `released`) vs `ACTIVE` (`claimed`, `in_progress`, `proposed`, `review`) status checks (`UNKNOWN_CLAIM_STATUS` on unrecognized/empty status), plus fail-closed checks on empty `claim.files`, `recordUpdates: null`, empty `update.key`, and case-insensitive SHA comparison.
+- .agents/coordination/preflight.test.mjs — 10 original synthetic tests plus 5 regression tests covering unknown/terminal statuses, empty claim scopes, `null` / empty `recordUpdates`, and hex-case SHA equality.
+- .agents/coordination/README.md — usage, status contract, and explicit limits.
 - AGENT-HANDOFF.md — this single living handoff document.
 
 ## Tests / evidence
 
-- Local Node.js v22.16.0, command: node --test .agents/coordination/preflight.test.mjs
-- Local matching implementation before GitHub upload: 10 passed, 0 failed. Post-upload Git blob SHA comparisons verified both committed executable files exactly match those locally tested (preflight.mjs 1e20d28523d14f8ca105d9c0d25fb2a1c68aaad7; preflight.test.mjs a7604fb1a6fd6ab92ba9a6bfa090dfb629861df8).
-- Synthetic only: tests simulated independent Agent A/Agent B claims, same-file conflicts, stale Git and Hub revisions, missing state/handoff, unauthorized deployment, malformed claims.
+- Local Node.js v22.16.0 (Nov 17 original): `node --test .agents/coordination/preflight.test.mjs` — 10 passed, 0 failed.
+- Local Node.js v24.15.0 (Nov 21 post-fix): `node --test .agents/coordination/preflight.test.mjs` — 15 passed, 0 failed; live CLI scenarios verified (`PASS` exit 0, `FILE_CONFLICT` exit 1, `UNKNOWN_CLAIM_STATUS` exit 1, terminal `merged` exit 0, `STALE_BASE`/`STALE_RECORD` exit 1, invalid JSON exit 2); `git merge-tree --write-tree origin/main HEAD` clean (zero conflicts).
+- Synthetic only: tests simulated independent Agent A/Agent B claims, same-file conflicts, unknown/terminal claim statuses, stale Git and Hub revisions, missing state/handoff, unauthorized deployment, malformed claims.
 - Not yet verified: CI execution of PR commit, real two-agent execution, atomic claims/leases, protected branch checks, merge gates, actual Hub revision guards, rollback behavior and production authentication.
 
 ## Risks and unknowns

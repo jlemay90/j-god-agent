@@ -8,6 +8,7 @@ import { pathToFileURL } from 'node:url';
 
 const SHA = /^[0-9a-f]{40}$/i;
 const ACTIVE = new Set(['claimed', 'in_progress', 'proposed', 'review']);
+const TERMINAL = new Set(['merged', 'closed', 'abandoned', 'released']);
 const REQUIRED_HANDOFF = ['summary', 'tests', 'unknowns', 'nextStep'];
 const isPlainObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 const validPath = (p) => typeof p === 'string' && p.length > 0 && !p.startsWith('/') && !p.includes('\\') && !p.split('/').some((s) => s === '' || s === '.' || s === '..');
@@ -29,7 +30,7 @@ export function evaluateProposal(proposal, state) {
   if (proposal.action !== 'propose') add('ACTION_NOT_AUTHORIZED', 'Phase 1 only permits action=propose; never merge, deploy, or write a Hub record.');
   if (!SHA.test(proposal.baseSha ?? '')) add('INVALID_BASE', 'proposal.baseSha must be an actual 40-character Git commit SHA.');
   if (!SHA.test(state.currentBaseSha ?? '')) add('UNKNOWN_BASE', 'state.currentBaseSha must be read from the current repository, not inferred.');
-  if (SHA.test(proposal.baseSha ?? '') && SHA.test(state.currentBaseSha ?? '') && proposal.baseSha !== state.currentBaseSha) {
+  if (SHA.test(proposal.baseSha ?? '') && SHA.test(state.currentBaseSha ?? '') && proposal.baseSha.toLowerCase() !== state.currentBaseSha.toLowerCase()) {
     add('STALE_BASE', 'Proposed base SHA differs from the latest verified base SHA.');
   }
 
@@ -49,9 +50,13 @@ export function evaluateProposal(proposal, state) {
         add('UNKNOWN_CLAIM', 'Malformed claim encountered; cannot establish exclusive ownership.');
         continue;
       }
-      if (!ACTIVE.has(claim.status)) continue;
+      if (TERMINAL.has(claim.status)) continue;
+      if (!ACTIVE.has(claim.status)) {
+        add('UNKNOWN_CLAIM_STATUS', 'Unrecognized claim status ' + JSON.stringify(claim.status) + ' on ' + claim.branch + '; only active or terminal statuses are permitted.');
+        continue;
+      }
       if (claim.branch === proposal.branch) continue;
-      if (!Array.isArray(claim.files) || !claim.files.every(validPath)) {
+      if (!Array.isArray(claim.files) || claim.files.length === 0 || !claim.files.every(validPath)) {
         add('UNKNOWN_CLAIM_SCOPE', 'Cannot evaluate active claim ' + String(claim.branch) + '.');
         continue;
       }
@@ -60,12 +65,12 @@ export function evaluateProposal(proposal, state) {
     }
   }
 
-  const updates = proposal.recordUpdates ?? [];
+  const updates = proposal.recordUpdates === undefined ? [] : proposal.recordUpdates;
   if (!Array.isArray(updates)) add('INVALID_RECORD_UPDATES', 'recordUpdates must be an array.');
   else if (isPlainObject(state.recordRevisions)) {
     for (const update of updates) {
-      if (!isPlainObject(update) || typeof update.key !== 'string' || !Number.isSafeInteger(update.expectedRevision)) {
-        add('INVALID_RECORD_UPDATE', 'Each record update requires a key and integer expectedRevision.');
+      if (!isPlainObject(update) || typeof update.key !== 'string' || !update.key.trim() || !Number.isSafeInteger(update.expectedRevision)) {
+        add('INVALID_RECORD_UPDATE', 'Each record update requires a nonempty key and integer expectedRevision.');
         continue;
       }
       const latest = state.recordRevisions[update.key];
