@@ -92,4 +92,3 @@ class AdapterAndMultiTopicTests(unittest.TestCase):
     def test_future_fetch_rejected(self):
         with self.assertRaises(ValueError):
             resolve('alpha case',[record(fetched='2026-11-25T00:00:00Z')],now=NOW)
-
