@@ -92,3 +92,14 @@ class AdapterAndMultiTopicTests(unittest.TestCase):
     def test_future_fetch_rejected(self):
         with self.assertRaises(ValueError):
             resolve('alpha case',[record(fetched='2026-11-25T00:00:00Z')],now=NOW)
+
+class CrossSourceIntegrityTests(unittest.TestCase):
+    def test_conflicting_alias_titles_same_case_flagged(self):
+        a=record(name='Account A',id='hub',aliases=['alpha case'],canonical_key='case-alpha',claim_key='access',claim_value='closed')
+        b=record(name='Support A',id='dossier',aliases=['alpha case'],canonical_key='case-alpha',claim_key='access',claim_value='open')
+        r=resolve('alpha case',[a,b],now=NOW)
+        self.assertEqual(len(r['conflicts']),1)
+    def test_bounded_result_set_warns_of_omissions(self):
+        rows=[record(id=str(i)) for i in range(12)]
+        r=resolve('alpha case',rows,now=NOW,max_results=3)
+        self.assertTrue(any('excluded by result limit' in x for x in r['must_verify']))
