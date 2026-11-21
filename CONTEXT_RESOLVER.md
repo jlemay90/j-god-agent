@@ -22,9 +22,9 @@ Find the right facts already held in an authorized source before asking the owne
 
 ## Implemented
 
-`j_context_resolver.py` implements input validation, topic/alias relevance, evidence-aware source ranking, stale-read notice, unresolved claim disagreement detection, no-match fallback, and bounded 3.5k-character context packet. It exposes two pure data adapters, `hub_items_to_records` and `doc_excerpt_to_record`, which accept data an already-authorized caller supplies. It has no network calls, no writes, no background work, no new database, and no secret handling. Source text is untrusted reference data, never executable instructions.
+`j_context_resolver.py` implements input validation, topic/alias relevance, evidence-aware source ranking, stale-read notice, explicit shared canonical case-key conflict detection, bounded-result omission warnings, unresolved claim disagreement detection, no-match fallback, and bounded 3.5k-character context packet. It exposes two pure data adapters, `hub_items_to_records` and `doc_excerpt_to_record`, which accept data an already-authorized caller supplies. It has no network calls, no writes, no background work, no new database, and no secret handling. Source text is untrusted reference data, never executable instructions.
 
-The `verified` status is *assigned by a trustworthy upstream reviewer/adapter*. The resolver cannot independently establish external truth from a URL or a claimed status. Evidence level, fetch receipt and real-world event date are separate concepts. A stale-read warning does not prove the historical record itself is false.
+Use the same optional `canonical_key` in Hub and dossier records when a trusted source map confirms they refer to the same case; titles alone cannot safely establish identity. The `verified` status is *assigned by a trustworthy upstream reviewer/adapter*. The resolver cannot independently establish external truth from a URL or a claimed status. Evidence level, fetch receipt and real-world event date are separate concepts. A stale-read warning does not prove the historical record itself is false.
 
 ### Use offline with approved inputs
 
@@ -39,8 +39,8 @@ Sources must be fetched by authorized tools before constructing the record bundl
 
 ## Local validation results
 
-- Python `unittest discover`: **21 / 21 synthetic tests PASS** in isolated workspace on 2026-11-20.
-- Tests cover ten distinct topic routes, aliases, absent source, irrelevant query, direct evidence versus pointer, stale source, owner report, unresolved conflict, marked supersession, malicious embedded text treated as data, invalid URL/timestamp, packet budget, input upper bounds and pure Hub/Doc adapters.
+- Python `unittest discover`: **23 / 23 synthetic tests PASS** in isolated workspace on 2026-11-20.
+- Tests cover ten distinct topic routes, aliases, absent source, irrelevant query, direct evidence versus pointer, stale source, owner report, cross-source canonical-key disagreement, omitted-record warning, marked supersession, malicious embedded text treated as data, invalid URL/timestamp, packet budget, input upper bounds and pure Hub/Doc adapters.
 - One *manual adapter smoke test* using a minimal case summary reproduced retrieval of a Hub case pointer plus its corresponding dossier excerpt, but this was not a connected API/production test.
 - **Not tested:** live authenticated end-to-end connector calls from the deployed app; retrieval precision on real ten-case benchmark; UI; negative-auth; Hub ↔ Zeus bridge; latency and cost at scale; unattended / automatic ChatGPT startup behavior. Do not claim those pass.
 
