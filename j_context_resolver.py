@@ -69,7 +69,7 @@ def validate(raw: Any) -> dict[str, Any]:
     aliases = raw.get("aliases", [])
     if not isinstance(aliases, list) or len(aliases) > 20 or any(not isinstance(x, str) or len(x) > 100 for x in aliases):
         raise ValueError("Bad subject aliases")
-    for field in ("claim_key", "claim_value", "supersedes", "source_at", "evidence_note"):
+    for field in ("canonical_key", "claim_key", "claim_value", "supersedes", "source_at", "evidence_note"):
         if field in raw and raw[field] is not None and (not isinstance(raw[field], str) or len(raw[field]) > 500):
             raise ValueError("Invalid claim metadata: " + field)
     if raw.get("source_at") and not utc_time(raw["source_at"]):
@@ -97,7 +97,7 @@ def disagreements(selected: list[dict[str, Any]]) -> list[dict[str, Any]]:
     groups: dict[tuple[str, str], list[dict[str, Any]]] = {}
     for item in selected:
         if item.get("claim_key") and item.get("claim_value"):
-            groups.setdefault((normalize(item["subject"]), item["claim_key"]), []).append(item)
+            groups.setdefault((normalize(item.get("canonical_key") or item["subject"]), item["claim_key"]), []).append(item)
     out = []
     for (subject, key), group in groups.items():
         active = [x for x in group if x["status"] != "superseded"]
@@ -142,6 +142,8 @@ def resolve(query: str, records: list[dict[str, Any]], *, now: str | None = None
                 "sources": [], "conflicts": [], "must_verify": ["No relevant connected source was supplied"], "read_only": True}
     notes = []
     must_verify = []
+    if len(ranked) > len(chosen):
+        must_verify.append(f"{len(ranked) - len(chosen)} additional matching records excluded by result limit; inspect them for newer or conflicting evidence")
     result_sources = []
     for item in chosen:
         fetched = utc_time(item["fetched_at"])
@@ -218,7 +220,7 @@ def hub_items_to_records(hub_state: dict[str, Any], *, fetched_at: str, hub_url:
 
 def doc_excerpt_to_record(*, source_id: str, subject: str, url: str, fetched_at: str,
                           excerpt: str, status: str = "owner_reported", aliases: list[str] | None = None,
-                          source_at: str | None = None) -> dict[str, Any]:
+                          canonical_key: str | None = None, source_at: str | None = None) -> dict[str, Any]:
     """Package a specific, manually selected authorized excerpt with provenance.
 
     Calling adapter must inspect source first: this cannot verify a Google Doc
@@ -227,6 +229,8 @@ def doc_excerpt_to_record(*, source_id: str, subject: str, url: str, fetched_at:
     value = dict(id=source_id, subject=subject, aliases=aliases or [], source_url=url,
                  source_role="case_dossier", fetched_at=fetched_at,
                  summary=excerpt[:MAX_TEXT], status=status)
+    if canonical_key:
+        value["canonical_key"] = canonical_key
     if source_at:
         value["source_at"] = source_at
     return validate(value)
