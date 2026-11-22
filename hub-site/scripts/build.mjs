@@ -18,6 +18,8 @@ const [template, styles, script, worker, manifest] = await Promise.all([
 ]);
 if (!template.includes('/*APP_STYLES*/') || !template.includes('/*APP_SCRIPT*/')) throw new Error('App embedding markers are missing.');
 const zeus = await readFile(join(root, "worker/zeus.js"), "utf8");
+const zeusHubProbe = await readFile(join(root, "worker/zeus_hub_probe.mjs"), "utf8");
+if (!worker.includes("/*ZEUS_READONLY_HUB_PROBE*/")) throw new Error("Read-only probe build marker is missing.");
 const zeusClient = await readFile(join(root, "app/zeus.js"), "utf8");
 const planningWorker = await readFile(join(root, "worker/planning.js"), "utf8");
 const planningClient = await readFile(join(root, "app/planning.js"), "utf8");
@@ -30,6 +32,6 @@ JSON.parse(manifest);
 await rm(dist, { recursive: true, force: true });
 await mkdir(join(dist, "server"), { recursive: true });
 await mkdir(join(dist, ".openai"), { recursive: true });
-await writeFile(join(dist, "server/index.js"), worker.replace('const APP_ICON_BASE64 = "";', 'const APP_ICON_BASE64 = ' + JSON.stringify(icon) + ';').replace("/*ZEUS_BRIDGE*/", () => zeus).replace("/*PLANNING_WORKER*/", () => planningWorker).replace(marker, "const INDEX_HTML = " + JSON.stringify(html) + ";"));
+await writeFile(join(dist, "server/index.js"), worker.replace('const APP_ICON_BASE64 = "";', 'const APP_ICON_BASE64 = ' + JSON.stringify(icon) + ';').replace("/*ZEUS_READONLY_HUB_PROBE*/", () => zeusHubProbe).replace("/*ZEUS_BRIDGE*/", () => zeus).replace("/*PLANNING_WORKER*/", () => planningWorker).replace(marker, "const INDEX_HTML = " + JSON.stringify(html) + ";"));
 await writeFile(join(dist, ".openai/hosting.json"), manifest);
 console.log("Built Site Worker");
