@@ -1,0 +1,23 @@
+[Unit]
+Description=J Pattern Investigator watchdog and owner notification attempts
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=jpattern
+Group=jpattern
+WorkingDirectory=/opt/j-command-os
+EnvironmentFile=/etc/j-command-os/pattern.env
+UMask=0077
+ExecStart=/usr/bin/python3 -m pattern_investigator.worker_cli watch --notify --db /var/lib/j-command-os/pattern/pattern.sqlite
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/j-command-os/pattern
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target
