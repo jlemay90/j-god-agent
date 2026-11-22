@@ -287,6 +287,8 @@ async function api(request, env, path) {
   }
 }
 
+/*ZEUS_READONLY_HUB_PROBE*/
+
 /*ZEUS_BRIDGE*/
 
 const MCP_TOOLS = [
@@ -432,6 +434,9 @@ export default {
           headers: { "content-type": "text/html; charset=utf-8", "cache-control": "private, no-store", "x-content-type-options": "nosniff" },
         });
       }
+      if (path === "/api/zeus-link/probe") return await readOnlyHubProbe(request, env, {
+        storage: bucket(env), readObject, readItems, pulseKey: PULSE_KEY,
+      });
       if (path === "/mcp") return await mcp(request, env);
       if (path.startsWith("/api/zeus/")) return await zeusApi(request, env, path);
       if (path.startsWith("/api/")) return await api(request, env, path);
