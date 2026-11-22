@@ -40,7 +40,7 @@ Model access and pricing vary by project. Validate the model with the provider b
 
 ## Verification
 
-Locally tested new worker against 15 mocked tests; external Gemini API was **not** contacted. The already-existing controller in PR #9 reports 13 local deterministic tests. Before claiming an integrated pass: execute full original and new suites together against the EXACT checked-out branch, run a five-cycle real Gemini pilot with manually reviewed public sources, verify response IDs/usage from the provider, test injected outage and restart recovery, inspect actual charges, and record negative-auth and concurrent duplicate-dispatch behavior.
+Locally tested 15 mocked worker tests plus one five-cycle SQLite interrupted/resumed integration test with the exact original parent controller source (controller git blob SHA matched PR #9). External Gemini API was **not** contacted. The already-existing controller in PR #9 reports 13 local deterministic tests. Before claiming an integrated pass: execute full original and new suites together against the EXACT checked-out branch, run a five-cycle real Gemini pilot with manually reviewed public sources, verify response IDs/usage from the provider, test injected outage and restart recovery, inspect actual charges, and record negative-auth and concurrent duplicate-dispatch behavior.
 
 For a new or interrupted run, use the existing J RUN controller's signed human/operator reconciliation; never automatically resume a needs_review mission based on a model guess.
 
