@@ -14,6 +14,7 @@ def main(argv=None):
     p=argparse.ArgumentParser(prog="j-pattern-investigator")
     p.add_argument("action",choices=["run-once","watch","dispatch","status"])
     p.add_argument("--db",default=os.getenv("PATTERN_LEDGER_PATH",""))
+    p.add_argument("--notify",action="store_true",help="attempt owner-only alert delivery (disabled unless separately configured)")
     a=p.parse_args(argv)
     if not a.db:
         print(json.dumps({"status":"BLOCKED","reason":"PRIVATE_LEDGER_PATH_MISSING"}))
@@ -25,10 +26,14 @@ def main(argv=None):
                 print(json.dumps({"status":"BLOCKED","reason":"RUN_NOT_ENABLED"}))
                 return 2
             result=run_once(ledger)
+            if a.notify:
+                result["alerts"]=dispatch_alerts(ledger)
             print(json.dumps(result,sort_keys=True))
             return 0 if result["status"]=="COMPLETED" else 2
         if a.action=="watch":
             result=watchdog_check(ledger)
+            if a.notify:
+                result["alerts"]=dispatch_alerts(ledger)
             print(json.dumps(result,sort_keys=True))
             return 0 if result["check_status"]=="ON_TIME" else 3
         if a.action=="dispatch":
