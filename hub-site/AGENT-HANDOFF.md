@@ -30,7 +30,7 @@ All changes are in an isolated GitHub branch and remain unmerged/undeployed:
 ## Tests and evidence
 
 - PR #13 read-only helper had **13/13 offline tests passed** earlier, but it is not deployed.
-- **This preview's own CI status must be read directly from PR #16 and its exact branch SHA.** Do not call it tested unless that run passes. Scope: existing build, Site validation, Hub state/action regression, Zeus regression, direct auth unit checks and full synthetic worker preview.
+- **TESTED (source-level synthetic only):** GitHub Actions run [45068979443](https://github.com/jlemay90/j-god-agent/actions/runs/45068979443) passed at parent preview HEAD `a88d6cfff268766d9e9fd7df0efb9a06bb0ddbdd` (the only subsequent change is this documentation update). It successfully built and validated the existing Site bundle, ran existing Hub state/action and Zeus bridge regression scripts, passed **6/6** isolated read-only handler tests, and passed **6** end-to-end bundled-Worker checks using a fake R2 store (zero writes). CI logs independently inspected. The tests do **not** establish native Sites SIWC/owner authentication, actual deployed source, or live R2 access.
 - Browser connector returned: *"Browser access requires the originating browser context"*. This chat cannot inspect the private Sites source editor or authenticate into its preview.
 - Connected Hub tool returned current Hub state successfully on 2026-11-22, with a current Pulse. That establishes Hub connector state access, **not** actual deployed source code or a Zeus read.
 - No real SIWC token, scoped production key, private R2, owner records, or Replit production runtime has been used in this experiment.
