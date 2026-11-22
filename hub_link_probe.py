@@ -109,10 +109,13 @@ def report(argument=""):
             "writeAccess": "NOT_AVAILABLE",
             "note": "A working Telegram reply is not proof of Hub access. Use /hublink probe MARKER after authenticated deployment.",
         }, sort_keys=True)
+    if parts == ["verify-scoped"]:
+        from hub_scoped_pulse import report as scoped_report
+        return scoped_report()
     if len(parts) == 2 and parts[0] == "probe":
         try:
             return json.dumps(probe(parts[1]), sort_keys=True)
         except HubLinkError as exc:
             return json.dumps({"status": "BLOCKED", "reason": str(exc),
                                "writeAccess": "NOT_AVAILABLE"}, sort_keys=True)
-    return "Use /hublink status or /hublink probe ZEUS-HUB-LINK-20261122-K7M4"
+    return "Use /hublink status, /hublink probe MARKER, or /hublink verify-scoped."
