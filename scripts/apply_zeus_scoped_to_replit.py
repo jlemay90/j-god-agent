@@ -14,6 +14,7 @@ def main():
     current = subprocess.check_output(["git","status","--porcelain"],text=True)
     # The downloaded helper files are allowed untracked, but existing user edits are not.
     allowed = {"?? hub_link_probe.py", "?? hub_scoped_pulse.py",
+               "?? tests/", "?? scripts/",
                "?? tests/test_hub_scoped_pulse.py", "?? scripts/apply_zeus_scoped_to_replit.py"}
     unknown = [x for x in current.splitlines() if x not in allowed]
     if unknown:
