@@ -124,6 +124,10 @@ async def extra_command(update,ctx,send_text):
         from j_hub import report
         await send_text(message, await asyncio.to_thread(report))
         return True
+    if cmd == '/hublink':
+        from hub_link_probe import report as hub_link_report
+        await send_text(message, await asyncio.to_thread(hub_link_report, ' '.join(ctx.args)))
+        return True
     if cmd == '/repo':
         from j_repository import run as repo_run, RepoError
         try:
