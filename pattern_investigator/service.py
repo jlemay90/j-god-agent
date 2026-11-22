@@ -85,7 +85,7 @@ def watchdog_check(ledger:Ledger,*,now:datetime|None=None,
     expected_slot=local.strftime("%Y-%m-%d")
     past_grace=(local.hour>8 or (local.hour==8 and local.minute>=35))
     latest=ledger.latest()
-    status="MISSING_RUN"
+    status="MISSING_RUN" if past_grace else "AWAITING_SCHEDULED_RUN"
     if latest is not None:
         try:
             stamp=latest["finished_at_utc"] or latest["started_at_utc"]
@@ -106,13 +106,13 @@ def watchdog_check(ledger:Ledger,*,now:datetime|None=None,
                     status="ON_TIME"
         except (TypeError,ValueError,OverflowError):
             status="INVALID_RECEIPT"
-    if status not in {"ON_TIME","RUN_IN_PROGRESS"}:
+    if status not in {"ON_TIME","RUN_IN_PROGRESS","AWAITING_SCHEDULED_RUN"}:
         key="watch:"+expected_slot+":"+status
         ledger.alert_once(key,"MISSED_RUN",now)
     return {"check_status":status,"expected_slot":expected_slot,
             "last_run_status":latest["status"] if latest else "MISSING",
             "last_run_id":latest["run_id"] if latest else None,
-            "alert_status":"QUEUED_NOT_DELIVERED" if status not in {"ON_TIME","RUN_IN_PROGRESS"} else "NO_ALERT",
+            "alert_status":"QUEUED_NOT_DELIVERED" if status not in {"ON_TIME","RUN_IN_PROGRESS","AWAITING_SCHEDULED_RUN"} else "NO_ALERT",
             "independently_scheduled":False,
             "external_monitor_verified":False}
 
