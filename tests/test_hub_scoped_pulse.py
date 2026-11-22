@@ -148,6 +148,7 @@ class ScopedZeusTests(unittest.TestCase):
         with patch.dict("os.environ", {}, clear=True):
             data = json.loads(telegram_report("verify-scoped"))
         self.assertEqual(data["status"], "BLOCKED")
+        self.assertTrue(data["requestId"].startswith("ZEUS-HUB-LINK-"))
         self.assertEqual(data["writes"], 0)
         self.assertFalse(data["responseBodyExposed"])
 
