@@ -128,3 +128,62 @@ employment, lending, medical or legal decision system.
 - https://core.telegram.org/bots/api#getupdates
 - https://docs.replit.com/references/publishing/reserved-vm-deployments
 - https://docs.replit.com/references/data-and-storage/production-databases
+
+
+## Split deployment: Replit chat and GCE background worker
+
+For the current split setup, keep the Telegram bot and Hub web bridge together on
+Replit. Run the durable Zep ingestion queue as a separate, always-on systemd
+service on a Google Compute Engine VM. The chat transports remain available
+through Replit; the VM handles queued memory ingestion in the background.
+
+The existing combined startup remains the default for backwards compatibility.
+To let the VM own Zep ingestion, set this Replit deployment variable to the
+literal value `false` and republish the Replit service:
+
+- `J_RUN_ZEP_WORKER=false`
+
+The setting is case-insensitive. Only the literal values `true` and `false`
+are accepted; the default is `true`. With `false`, `j_services.py` starts
+only `j_supervisor.py` and `j_web_bridge.py`.
+
+### GCE worker configuration
+
+Install the same repository revision on the VM and create the Python virtual
+environment with `requirements.txt`. Create a dedicated `zeus` Linux service
+account and place the worker environment in
+`/etc/j-god-agent/worker.env`, owned by root with mode `0600`:
+
+```text
+J_ENV=production
+DATABASE_URL=<production PostgreSQL connection string>
+ZEP_API_KEY=<Zep Cloud API key>
+```
+
+Do not commit or paste secret values into source, issues, or chat. The GCE worker
+needs the production `DATABASE_URL` and `ZEP_API_KEY`; it does not need
+`TELEGRAM_BOT_TOKEN`, `ALLOWED_USER_ID`, `GEMINI_API_KEY`, or
+`ZEUS_BRIDGE_SECRET`. The bot and Hub bridge keep their existing secrets on
+Replit. The worker may run without a Zep key, but it will not send queued data
+to Zep.
+
+Install `deploy/gce/zeus-zep-worker.service` after adapting its checkout path
+and Linux service account if needed, then enable it with systemd. Keep the VM
+running continuously and allow outbound connections to PostgreSQL and Zep.
+
+### Controlled cutover and rollback
+
+1. Install the code, Python dependencies, unit, and secure worker environment
+   on GCE, but do not start the worker yet.
+2. Set `J_RUN_ZEP_WORKER=false` in the Replit **published deployment**
+   environment and republish Replit. Confirm Telegram and Hub chat still work.
+3. Start and enable the GCE systemd worker. Confirm its service is active, the
+   PostgreSQL advisory lock is held by the GCE worker, and queued records are
+   draining without exposing credential values in logs.
+4. If the GCE worker fails, stop it first, set `J_RUN_ZEP_WORKER=true` on
+   Replit, and republish. This returns ingestion to the previous combined
+   process. The PostgreSQL advisory lock prevents two workers from processing
+   concurrently, but it does not replace checking service status.
+
+No provider settings or production services are changed by this repository
+configuration alone. The cutover above is a future operator procedure.
