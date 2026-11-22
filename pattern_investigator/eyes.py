@@ -47,7 +47,7 @@ def fetch_hub_evidence(*, siwc_token: str, route_secret: str,
     req = urllib.request.Request(
         SITE_URL,
         headers={"Authorization": "Bearer " + route_secret,
-                 "X-SIWC-Access-Token": siwc_token,
+                 "OAI-Sites-Authorization": "Bearer " + siwc_token,
                  "Accept": "application/json"},
         method="GET"
     )
