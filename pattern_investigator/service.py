@@ -14,6 +14,9 @@ from .ledger import Ledger
 from .voice import send_owner_alert, health_message
 
 TZ=ZoneInfo("America/Chicago")
+class NoApprovedEvidence(Exception):
+    pass
+
 def _now():
     return datetime.now(timezone.utc)
 
@@ -36,6 +39,8 @@ def run_once(ledger:Ledger, *, fetcher=None, now:datetime|None=None)->dict:
             receipt.get("source")!="owner_authenticated_curated_hub_pattern_evidence" or
             not isinstance(source.get("observations"),list)):
             raise ValueError("untrusted transport receipt")
+        if len(source["observations"]) == 0:
+            raise NoApprovedEvidence("NO_APPROVED_EVIDENCE")
         data=investigate({"request_id":claim["run_id"],
                           "observations":source["observations"]},now=now)
         report=assess(data)
@@ -63,14 +68,15 @@ def run_once(ledger:Ledger, *, fetcher=None, now:datetime|None=None)->dict:
         return {"slot":claim["slot"],"run_id":claim["run_id"],"status":"COMPLETED",
                 "source":"owner_scoped_live_hub_read_only","candidate_count":len(candidates),
                 "notification_status":"QUEUED_NOT_SENT" if candidates else "NO_ALERT_NEEDED"}
-    except Exception:
-        # No sensitive source content / credentials are included in run receipts.
+    except Exception as exc:
+        # Never echo private source bodies, keys, or exception messages.
+        reason=("NO_APPROVED_EVIDENCE" if isinstance(exc,NoApprovedEvidence)
+                else "SOURCE_OR_ANALYSIS_NOT_VERIFIED")
         ledger.finish(claim["slot"],claim["run_id"],"BLOCKED",now,
-                      {"reason":"SOURCE_OR_ANALYSIS_NOT_VERIFIED","notification_sent":False})
+                      {"reason":reason,"notification_sent":False})
         ledger.alert_once("failed:"+claim["slot"],"FAILED_RUN",now)
         return {"slot":claim["slot"],"run_id":claim["run_id"],"status":"BLOCKED",
-                "reason":"SOURCE_OR_ANALYSIS_NOT_VERIFIED",
-                "notification_status":"QUEUED_NOT_SENT"}
+                "reason":reason, "notification_status":"QUEUED_NOT_SENT"}
 
 def watchdog_check(ledger:Ledger,*,now:datetime|None=None,
                    max_age_hours:float=28)->dict:
