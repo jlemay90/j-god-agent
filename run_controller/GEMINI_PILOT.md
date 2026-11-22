@@ -1,6 +1,6 @@
 # J RUN — isolated Gemini read-only five-cycle pilot
 
-**Status as of 2026-11-22:** Draft branch only. A Python worker and 15 mocked tests exist. **Not live**: Gemini inference, authenticated five-cycle provider run, hosting, scheduling, Hub/Zeus integration, deployment, billing verification, or owner-facing notification.
+**Status as of 2026-11-22:** Draft branch only. A Python worker, 15 mocked worker tests and one five-cycle SQLite integration test exist. **Not live**: Gemini inference, authenticated five-cycle provider run, hosting, scheduling, Hub/Zeus integration, deployment, billing verification, or owner-facing notification.
 
 ## Objective and source boundaries
 
