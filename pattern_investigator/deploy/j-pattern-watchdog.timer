@@ -1,0 +1,11 @@
+[Unit]
+Description=Periodic separate-process J Pattern Investigator receipt watcher
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=0
+Unit=j-pattern-watchdog.service
+
+[Install]
+WantedBy=timers.target
