@@ -1,4 +1,4 @@
-"""Run the Telegram supervisor and authenticated web transport together."""
+"""Run Zeus chat transports and an optional local Zep worker together."""
 import os
 from pathlib import Path
 import signal
@@ -17,7 +17,10 @@ def main():
     env.setdefault('ZEUS_BRIDGE_PORT', env.get('PORT', '3000'))
     if not env.get('DATABASE_URL') or len(env.get('ZEUS_BRIDGE_SECRET', '')) < 32:
         raise SystemExit('Database and bridge signing secret must be configured.')
-    # Provision additive tables once before the three services connect concurrently.
+    run_zep_worker = env.get('J_RUN_ZEP_WORKER', 'true').strip().lower()
+    if run_zep_worker not in {'true', 'false'}:
+        raise SystemExit("J_RUN_ZEP_WORKER must be 'true' or 'false'.")
+    # Provision additive tables once before the selected services connect.
     try:
         from telegram_agent_bot import Store
         store = Store()
@@ -34,8 +37,11 @@ def main():
                 child.terminate()
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
+    scripts = ['j_supervisor.py', 'j_web_bridge.py']
+    if run_zep_worker == 'true':
+        scripts.append('j_zep_worker.py')
     try:
-        for script in ('j_supervisor.py', 'j_web_bridge.py', 'j_zep_worker.py'):
+        for script in scripts:
             children.append(subprocess.Popen([sys.executable, str(ROOT / script)], cwd=ROOT, env=env))
         while not stopping:
             if any(child.poll() is not None for child in children):
