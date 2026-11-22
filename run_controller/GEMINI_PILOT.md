@@ -8,27 +8,36 @@ Prove five authentic Gemini-assisted, read-only evidence reviews using existing 
 
 Worker accepts **pre-reviewed public snapshots only**, restricted to source links on github.com, docs.github.com and ai.google.dev. It never fetches a link, invokes a model tool, writes the Hub, sends email, bids, purchases or contacts a third party. Only the official Gemini Developer API receives the prompt; assume supplied excerpts are transmitted to Google. The "public" boolean is a manual owner/operator assertion, not a secret-detection guarantee. Do NOT put personal Hub data, credential values, account records or private documents into the manifest or public repository.
 
+## Owner authorization and verified provider rate (2026-11-22)
+
+The owner approved a **single five-cycle pilot** with **up to $0.05 of estimated Gemini API model usage**. This does NOT authorize other spending, new hosting, model changes, production credentials being exposed or altered, automatic retries, or future paid recurring jobs. Current real model calls and billed usage for this pilot: **none verified**. Execution is BLOCKED until the existing Google Cloud/Gemini project, isolated runner, credential access and billing tier are confirmed.
+
+Candidate model: `gemini-2.5-flash-lite`, using Gemini Developer API **standard** text rates independently checked 2026-11-22: **$0.10 per million input tokens, $0.40 per million output tokens**. Official primary source: https://ai.google.dev/gemini-api/docs/pricing#gemini-2.5-flash-lite . Rate estimates are not hard billing caps; the runner must separately confirm this model's availability, account tier and project charges before authorizing a paid call.
+
+The connected desktop remote agent was offline at inspection, and this ChatGPT execution environment has no Gemini credentials. No production Zeus settings have been changed.
+
 ## Two-step gate
 
 **1. Offline preview, no credentials or network:**
 
     python -m run_controller.gemini_pilot \
       --manifest run_controller/examples/public_evidence_five.json \
-      --db /private/path/jrun-pilot.sqlite \
-      --model EXACT_MODEL_ID \
-      --input-price-per-million VERIFIED_INPUT_PRICE \
-      --output-price-per-million VERIFIED_OUTPUT_PRICE \
-      --max-usd 0.05 --preview
+      --db "$HOME/.local/state/jrun-private/gemini-five.sqlite" \
+      --model gemini-2.5-flash-lite \
+      --input-price-per-million 0.10 \
+      --output-price-per-million 0.40 \
+      --max-usd 0.05 --max-seconds 300 --preview
 
 **2. Only after the owner verifies the current exact model, billing tier, per-million rates and approves a bounded model call:**
 
-Place GEMINI_API_KEY in the host's *private secret manager*, not this repository, source manifest, command arguments, chat, logs or screenshots. Execute the same command WITHOUT "--preview" but WITH "--authorize-model-calls" in an isolated host where the working directory/database is private, not a shared deployment. No automatic retries.
+Place GEMINI_API_KEY in the authorized isolated host's *private secret manager*, not this repository, source manifest, command arguments, chat, logs or screenshots. Execute the same command WITHOUT "--preview" but WITH "--authorize-model-calls" in an isolated host where the working directory/database is private, not a shared deployment. No automatic retries.
 
 Model access and pricing vary by project. Validate the model with the provider before authorization. Reference: https://ai.google.dev/gemini-api/docs/pricing and https://ai.google.dev/gemini-api/docs/tokens .
 
 ## Guards implemented
 
 - Exactly five public source tasks for the pilot; small fixed source/prompt size caps and approved HTTPS hostnames.
+- Refuses group/other-accessible checkpoint directories and files; new mission state is created with private permissions, without changing existing unrelated directories.
 - Requires BOTH GEMINI_API_KEY and explicit --authorize-model-calls before creating a model mission.
 - Gemini REST countTokens preflight; no generateContent call when estimated remaining budget is inadequate.
 - Per-request socket timeout 15 seconds by default; 256-token output cap; no model tool calls or provider grounding.
