@@ -74,31 +74,45 @@ def run_once(ledger:Ledger, *, fetcher=None, now:datetime|None=None)->dict:
 
 def watchdog_check(ledger:Ledger,*,now:datetime|None=None,
                    max_age_hours:float=28)->dict:
+    """Separate process. Daily expected run must exist by 08:35 Central.
+
+    This does not verify the watchdog itself is externally monitored.
+    """
     now=(now or _now()).astimezone(timezone.utc)
     if not isinstance(max_age_hours,(int,float)) or isinstance(max_age_hours,bool) or not 1<=max_age_hours<=72:
         raise ValueError("invalid max age")
+    local=now.astimezone(TZ)
+    expected_slot=local.strftime("%Y-%m-%d")
+    past_grace=(local.hour>8 or (local.hour==8 and local.minute>=35))
     latest=ledger.latest()
-    if latest is None:
-        status="MISSING_RUN"
-    else:
-        status="ON_TIME"
-        stamp=latest["finished_at_utc"] or latest["started_at_utc"]
+    status="MISSING_RUN"
+    if latest is not None:
         try:
+            stamp=latest["finished_at_utc"] or latest["started_at_utc"]
             ts=datetime.fromisoformat(stamp)
             if ts.tzinfo is None or ts>now+timedelta(minutes=5):
                 status="CLOCK_CONFLICT"
-            elif (now-ts).total_seconds()>max_age_hours*3600:
-                status="OVERDUE"
-            elif latest["status"]!="COMPLETED":
-                status="FAILED_RUN" if latest["status"]=="BLOCKED" else "STALLED_RUN"
+            else:
+                age=(now-ts).total_seconds()/3600
+                if latest["status"]=="RUNNING":
+                    status="RUN_IN_PROGRESS" if age<=1 else "STALLED_RUN"
+                elif latest["status"]!="COMPLETED":
+                    status="FAILED_RUN"
+                elif age>max_age_hours:
+                    status="OVERDUE"
+                elif past_grace and latest["slot"]!=expected_slot:
+                    status="MISSING_RUN"
+                else:
+                    status="ON_TIME"
         except (TypeError,ValueError,OverflowError):
             status="INVALID_RECEIPT"
-    if status!="ON_TIME":
-        key="watch:"+now.astimezone(TZ).strftime("%Y-%m-%d")+":"+status
+    if status not in {"ON_TIME","RUN_IN_PROGRESS"}:
+        key="watch:"+expected_slot+":"+status
         ledger.alert_once(key,"MISSED_RUN",now)
-    return {"check_status":status,"last_run_status":latest["status"] if latest else "MISSING",
+    return {"check_status":status,"expected_slot":expected_slot,
+            "last_run_status":latest["status"] if latest else "MISSING",
             "last_run_id":latest["run_id"] if latest else None,
-            "alert_status":"QUEUED_NOT_DELIVERED" if status!="ON_TIME" else "NO_ALERT",
+            "alert_status":"QUEUED_NOT_DELIVERED" if status not in {"ON_TIME","RUN_IN_PROGRESS"} else "NO_ALERT",
             "independently_scheduled":False,
             "external_monitor_verified":False}
 
