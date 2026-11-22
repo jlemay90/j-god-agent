@@ -1,0 +1,40 @@
+name: Existing Hub — read-only link preview QA
+
+on:
+  pull_request:
+    paths:
+      - 'hub-site/worker/index.js'
+      - 'hub-site/worker/zeus_hub_probe.mjs'
+      - 'hub-site/worker/test_zeus_hub_probe.mjs'
+      - 'hub-site/scripts/build.mjs'
+      - 'hub-site/scripts/test-hublink-preview.mjs'
+      - 'hub-site/scripts/test.mjs'
+      - 'hub-site/scripts/test-zeus.mjs'
+      - 'hub-site/scripts/validate.mjs'
+      - '.github/workflows/hub-readonly-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build the existing Hub Worker in ephemeral CI workspace
+        run: node hub-site/scripts/build.mjs
+      - name: Validate the existing UI and Worker artifact
+        run: node hub-site/scripts/validate.mjs
+      - name: Existing Hub state/action regression
+        run: node hub-site/scripts/test.mjs
+      - name: Existing Zeus bridge regression
+        run: node hub-site/scripts/test-zeus.mjs
+      - name: Direct read-only endpoint negative-authorization unit tests
+        run: node --test hub-site/worker/test_zeus_hub_probe.mjs
+      - name: Full existing-worker synthetic storage preview integration
+        run: node hub-site/scripts/test-hublink-preview.mjs
