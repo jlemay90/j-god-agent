@@ -1,0 +1,44 @@
+{
+  "tasks": [
+    {
+      "id": "run_controller_baseline",
+      "question": "What is proven about the current mission controller and what remains unverified?",
+      "source_url": "https://github.com/jlemay90/j-god-agent/pull/9",
+      "source_checked_at": "2026-11-22",
+      "source_text": "The PR describes a SQLite-backed mission controller with counted work cycles, checkpoints, time limits and interruption reconciliation. Thirteen deterministic local tests passed. There is no real AI worker, scheduler, or live deployment in this PR.",
+      "public": true
+    },
+    {
+      "id": "concurrent_agent_gate",
+      "question": "Why is the coordination preflight not sufficient for concurrent production writes?",
+      "source_url": "https://github.com/jlemay90/j-god-agent/issues/2",
+      "source_checked_at": "2026-11-22",
+      "source_text": "The coordination issue requires authenticated shared claims, fresh revision checks, conflict rejection, verified authorization, handoffs and owner approval before production writes. The initial preflight checks supplied snapshots but does not impose real atomic locks.",
+      "public": true
+    },
+    {
+      "id": "site_source_integrity",
+      "question": "What source-integrity problem must be resolved before wiring the worker into the live private Hub?",
+      "source_url": "https://github.com/jlemay90/j-god-agent/issues/6",
+      "source_checked_at": "2026-11-22",
+      "source_text": "The issue says the GitHub hub-site snapshot is not verified as the exact deployed private ChatGPT Sites source. An authenticated read-only inspection of the live source/UI and authorization is required before any UI patch, merge or deployment.",
+      "public": true
+    },
+    {
+      "id": "context_resolver_gate",
+      "question": "Which source-backed retrieval capability is tested, and what is still missing for live operation?",
+      "source_url": "https://github.com/jlemay90/j-god-agent/pull/8",
+      "source_checked_at": "2026-11-22",
+      "source_text": "The Context Resolver draft reports 23 synthetic tests passing and source-linked, bounded packets. It does not provide a live authenticated Hub or Drive adapter, a real-world benchmark or deployment.",
+      "public": true
+    },
+    {
+      "id": "context_budget_gate",
+      "question": "What does the existing context-overflow patch demonstrate and what remains outstanding?",
+      "source_url": "https://github.com/jlemay90/j-god-agent/pull/3",
+      "source_checked_at": "2026-11-22",
+      "source_text": "The draft constrains composed Zeus request context and preserves typed messages and stored history. Synthetic and read-only payload tests passed, but real signed Hub-to-Zeus end-to-end verification and deployment against the actual live Sites source are still missing.",
+      "public": true
+    }
+  ]
+}
