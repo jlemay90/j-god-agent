@@ -79,6 +79,9 @@ class PatternInvestigatorTest(unittest.TestCase):
         f = check([record(1, sensitive=True), record(2), record(3)])["findings"][0]
         self.assertEqual(f["assessment"], "REQUIRES_SEPARATE_CONSENT")
 
+    def test_wrong_type_enumeration_is_blocked_not_crashed(self):
+        with self.assertRaises(InvalidInput): check([record(1, source_kind=["original_verified"])])
+
     def test_missing_authorization_fails_closed(self):
         with self.assertRaises(InvalidInput): check([record(1, authorized=False)])
 
