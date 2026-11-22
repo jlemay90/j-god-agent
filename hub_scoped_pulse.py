@@ -123,11 +123,13 @@ def verify_scoped_pulse(*, env=None, opener=None, now=None, request_id=None):
 
 
 def report(*, env=None):
+    request_id = "ZEUS-HUB-LINK-%s-%s" % (
+        datetime.now(timezone.utc).strftime("%Y%m%d"), secrets.token_hex(5).upper())
     try:
-        return json.dumps(verify_scoped_pulse(env=env), sort_keys=True)
+        return json.dumps(verify_scoped_pulse(env=env, request_id=request_id), sort_keys=True)
     except ScopedHubError as exc:
         return json.dumps({
-            "request": "scoped-pulse-read", "status": "BLOCKED",
+            "requestId": request_id, "status": "BLOCKED",
             "reason": str(exc), "writes": 0,
             "responseBodyExposed": False,
             "next": "Verify secret configuration, deployed route and owner authorization.",
