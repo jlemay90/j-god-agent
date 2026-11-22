@@ -59,7 +59,7 @@ def _validate_observation(row: Any, now: datetime) -> dict:
     if not isinstance(row["sensitive"], bool):
         raise InvalidInput("sensitive flag must be explicit")
     for key, allowed in (("source_kind", ALLOWED_PROVENANCE), ("basis", ALLOWED_BASIS), ("polarity", ALLOWED_POLARITY), ("goal", GOALS)):
-        if row[key] not in allowed:
+        if not isinstance(row[key], str) or row[key] not in allowed:
             raise InvalidInput(f"{key} value not supported")
     occurred_at = _iso(row["occurred_at"], "occurred_at")
     if occurred_at > now + timedelta(minutes=5):
