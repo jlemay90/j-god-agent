@@ -32,9 +32,10 @@ Set these Secrets in the workspace AND published deployment:
 - TELEGRAM_BOT_TOKEN: BotFather token
 - ALLOWED_USER_ID: your positive numeric user ID
 - GEMINI_API_KEY: Google API key
-- GEMINI_MODEL: gemini-flash-latest (or a tested model available to your account)
+- GEMINI_MODEL: defaults to gemini-3.1-flash-lite in start_j.sh
 - J_ENV: production for hosted operation
 - DATABASE_URL: a dedicated production PostgreSQL connection string
+- ZEUS_BRIDGE_SECRET: a random signing secret at least 32 characters long
 - Optional GEMINI_TTS_MODEL: an available Gemini speech generation model
 
 PostgreSQL is canonical for versioned rules, settings, and the last 100 completed
@@ -50,12 +51,15 @@ Build command:
 
 Run command:
 
-    python telegram_agent_bot.py
+    sh start_j.sh
 
-Choose a Reserved VM background worker for long polling. Ordinary editor Run is
-for testing, not a 24/7 deployment. Run exactly ONE instance per bot token; stop
-the workspace test process before starting the deployment. Do not enable multiple
-replicas. Hosting/API charges and outages still apply. Set provider spend alerts.
+This starts the Telegram supervisor, Hub bridge, and (by default) the Zep
+worker. The checked-in .replit file targets cloudrun; verify the published
+Replit deployment mode and always-on behavior before relying on it for continuous
+Telegram polling. Keep exactly ONE active Telegram poller per bot token and do
+not enable multiple replicas. In the split setup below, the GCE VM runs only the
+Zep worker; it does not replace the Replit chat services. Ordinary editor Run is
+for testing. Hosting/API charges and outages still apply. Set provider spend alerts.
 
 ## 5. Acceptance checks before relying on it
 1. Send /start and a text question from your account.
