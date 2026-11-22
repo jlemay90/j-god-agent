@@ -1,0 +1,23 @@
+[Unit]
+Description=Zeus Zep memory ingestion worker
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=zeus
+Group=zeus
+WorkingDirectory=/opt/j-god-agent
+Environment=J_ENV=production
+EnvironmentFile=/etc/j-god-agent/worker.env
+ExecStart=/opt/j-god-agent/.venv/bin/python /opt/j-god-agent/j_zep_worker.py
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
