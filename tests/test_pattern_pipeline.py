@@ -108,6 +108,14 @@ class LedgerTests(unittest.TestCase):
         self.assertNotIn("Neutral synthetic evidence",row["summary"])
         self.assertEqual(len(self.ledger.pending_alerts()),1)
         self.assertEqual(run_once(self.ledger,fetcher=source,now=NOW)["status"],"ALREADY_RECORDED")
+    def test_empty_approved_source_is_blocked_not_success(self):
+        result=run_once(self.ledger,fetcher=lambda:source([]),now=NOW)
+        self.assertEqual(result["status"],"BLOCKED")
+        self.assertEqual(result["reason"],"NO_APPROVED_EVIDENCE")
+        self.assertEqual(self.ledger.latest()["status"],"BLOCKED")
+        self.assertEqual(len(self.ledger.pending_alerts()),1)
+        self.assertEqual(watchdog_check(self.ledger,now=NOW)["check_status"],"FAILED_RUN")
+
     def test_failure_keeps_receipt_and_does_not_echo_secret(self):
         result=run_once(self.ledger,fetcher=lambda: (_ for _ in ()).throw(RuntimeError("private secret")),now=NOW)
         self.assertEqual(result["status"],"BLOCKED")
