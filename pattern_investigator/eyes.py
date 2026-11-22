@@ -42,7 +42,7 @@ def fetch_hub_evidence(*, siwc_token: str, route_secret: str,
     'Authenticated' means accepted by the private scoped route, not proof that
     any personal observation was true. Downstream evidence gate still applies.
     """
-    if not all(isinstance(s, str) and SECRET.fullmatch(s) for s in (siwc_token, route_secret)):
+    if (siwc_token == route_secret or not all(isinstance(s, str) and SECRET.fullmatch(s) for s in (siwc_token, route_secret))):
         raise EyesBlocked("private Hub source not configured")
     req = urllib.request.Request(
         SITE_URL,
