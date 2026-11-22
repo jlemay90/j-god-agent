@@ -249,7 +249,7 @@ def main():
            .post_init(startup).post_shutdown(shutdown).build())
     app.bot_data.update(owner_id=owner_id, store=Store(),
                         ai=genai.Client(api_key=key, http_options=types.HttpOptions(timeout=60000)))
-    app.add_handler(CommandHandler(['start', 'help', 'rules', 'voiceon', 'voiceoff', 'forget', 'status', 'memory', 'openloops', 'improvements', 'usage', 'trace', 'autonomy', 'tools', 'calc', 'web', 'task', 'tasks', 'remind', 'reminders', 'recall', 'capabilities', 'projects', 'repo', 'hub'], command))
+    app.add_handler(CommandHandler(['start', 'help', 'rules', 'voiceon', 'voiceoff', 'forget', 'status', 'memory', 'openloops', 'improvements', 'usage', 'trace', 'autonomy', 'tools', 'calc', 'web', 'task', 'tasks', 'remind', 'reminders', 'recall', 'capabilities', 'projects', 'repo', 'hub', 'hublink'], command))
     app.add_handler(MessageHandler((filters.TEXT & ~filters.COMMAND) | filters.VOICE, handle))
     app.add_error_handler(on_error)
     # Retain pending updates across a restart; deduplicate completed requests.
