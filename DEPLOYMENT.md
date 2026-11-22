@@ -174,10 +174,11 @@ running continuously and allow outbound connections to PostgreSQL and Zep.
 ### Controlled cutover and rollback
 
 1. Install the code, Python dependencies, unit, and secure worker environment
-   on GCE, but do not start the worker yet.
+   on GCE, but do not enable or start the worker yet.
 2. Set `J_RUN_ZEP_WORKER=false` in the Replit **published deployment**
    environment and republish Replit. Confirm Telegram and Hub chat still work.
-3. Start and enable the GCE systemd worker. Confirm its service is active, the
+3. Enable and start the GCE systemd worker with \`systemctl enable --now\`.
+   Confirm its service is active, the
    PostgreSQL advisory lock is held by the GCE worker, and queued records are
    draining without exposing credential values in logs.
 4. If the GCE worker fails, stop it first, set `J_RUN_ZEP_WORKER=true` on
