@@ -39,7 +39,14 @@ def main(argv=None):
         return 0
     if not args.authorize_model_calls or not os.environ.get("GEMINI_API_KEY"):
         parser.error("blocked: --authorize-model-calls AND GEMINI_API_KEY are required; no model request made")
-    args.db.parent.mkdir(parents=True, exist_ok=True)
+    if args.db.is_symlink():
+        parser.error("refuse a symlink as the private checkpoint database")
+    args.db.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if args.db.parent.stat().st_mode & 0o077:
+        parser.error("private checkpoint directory must not be accessible to group/others")
+    args.db.touch(mode=0o600, exist_ok=True)
+    if args.db.stat().st_mode & 0o077:
+        parser.error("private checkpoint file must not be accessible to group/others")
     controller = Controller(args.db)
     try:
         fingerprint = hashlib.sha256(json.dumps(manifest, sort_keys=True).encode()).hexdigest()
