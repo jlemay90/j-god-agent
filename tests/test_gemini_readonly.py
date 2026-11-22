@@ -164,5 +164,42 @@ class GeminiReadOnlyTests(unittest.TestCase):
             self.assertFalse(db.exists())
 
 
+    def test_rejects_world_readable_checkpoint_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "evidence.json"
+            src.write_text(json.dumps(manifest()))
+            private = Path(tmp) / "insecure"
+            private.mkdir()
+            private.chmod(0o755)
+            db = private / "checkpoint.sqlite"
+            argv = ["--manifest", str(src), "--db", str(db), "--model", "gemini-test",
+                    "--input-price-per-million", "1", "--output-price-per-million", "2",
+                    "--max-usd", "0.02", "--authorize-model-calls"]
+            with patch.dict(os.environ, {"GEMINI_API_KEY": "test-key-not-secret"}):
+                with self.assertRaises(SystemExit) as cm:
+                    main(argv)
+            self.assertEqual(cm.exception.code, 2)
+            self.assertFalse(db.exists())
+
+    def test_rejects_world_readable_existing_checkpoint_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "evidence.json"
+            src.write_text(json.dumps(manifest()))
+            private = Path(tmp) / "secure"
+            private.mkdir(mode=0o700)
+            db = private / "checkpoint.sqlite"
+            db.write_bytes(b"not a real sqlite file")
+            db.chmod(0o644)
+            argv = ["--manifest", str(src), "--db", str(db), "--model", "gemini-test",
+                    "--input-price-per-million", "1", "--output-price-per-million", "2",
+                    "--max-usd", "0.02", "--authorize-model-calls"]
+            with patch.dict(os.environ, {"GEMINI_API_KEY": "test-key-not-secret"}):
+                with self.assertRaises(SystemExit) as cm:
+                    main(argv)
+            self.assertEqual(cm.exception.code, 2)
+            self.assertEqual(db.read_bytes(), b"not a real sqlite file")
+
+
+
 if __name__ == "__main__":
     unittest.main()
