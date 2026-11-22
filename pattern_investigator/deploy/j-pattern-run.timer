@@ -1,0 +1,11 @@
+[Unit]
+Description=Schedule J Pattern Investigator at 07:35 America/Chicago
+
+[Timer]
+OnCalendar=*-*-* 07:35:00 America/Chicago
+Persistent=true
+RandomizedDelaySec=0
+Unit=j-pattern-run.service
+
+[Install]
+WantedBy=timers.target
