@@ -42,3 +42,26 @@ Official Sites source: https://learn.chatgpt.com/docs/sites/data-and-connections
 GitHub is PUBLIC. No private Hub content, credentials or personal records are committed. Isolated branch is reversible: close PR and delete branch without production impact. Original working Telegram, Hub, Custom Instructions, R2 records and Replit deployment are unchanged. Read-only Site integration belongs to the verified Site editor/owner, not a blind merge from GitHub. Follow existing Issues #2 and #6 and the canonical app-continuity skill.
 
 Next executable step: use Sites Work/Codex to inspect actual private Site source; port endpoint into verified source preview; conduct auth/negative-auth live tests; then obtain approval before any publishing.
+
+
+## Owner-approved narrow live Pulse route, native v28 source (2026-11-22)
+
+Owner approved progressing to a live Zeus-to-Hub connection using a new, narrowly scoped Pulse metadata-only credential, NOT the broad record bearer. Native Sites v28 source was exported and authenticated on user's computer: ZIP sha256 097ca0ce4820dd98ce40fe6668d7d4a21b80dd8fff9b77258bf379c302e87e29 and 19/19 internal file checksums. Native v28 commit fa822b5311677880c6ed7bbf2b5799dfeb473980 is NOT in public GitHub repository.
+
+Existing native artifacts on the authorized desktop:
+- Downloads/J-Command-Hub-v28-Zeus-scoped-unpublished.patch, sha256 28d671d329e1293cfadeb3ea7338c8bc011af517ea79380496f1c6a6ae05d702, four changed source files.
+- Downloads/J-Command-Hub-v28-Zeus-scoped-test-receipt.md, original regression suites PASS, 6/6 scoped bundle security tests PASS, loopback HTTP tested 401 missing, 401 wrong, 200 correct synthetic bearer, one synthetic Pulse read, zero writes. Homepage HTML hash identical before and after.
+- Neither live R2 nor real secrets used in these tests.
+
+New native proposed route: GET /api/zeus-link/probe?requestId=ZEUS-HUB-LINK-YYYYMMDD-XXXXXXXXXX. It requires a NEW distinct HUB_ZEUS_SCOPED_READ_TOKEN (64 lowercase hex) and HUB_ZEUS_SCOPED_READ_ENABLED=true, checks HMAC, reads ONLY existing R2 hub/v1/pulse.json. Returns the date and minimal structured receipt with zero writes; never item text, bulk records or item listings.
+
+This isolated branch adds hub_scoped_pulse.py and owner-only /hublink verify-scoped. Features: exact pinned HTTPS host, one request per explicit command, no redirects or automatic retries, required feature flag and new credential from private environment, strict source/identity/scope/read-count checks, bounded JSON and timeout, no secrets or item contents in Telegram. Optional SIWC service header if authorized Sites private gateway requires it. DOES NOT use HUB_RECORD_READ_TOKEN or superseded broad-token PR #17.
+
+LIVE preconditions:
+1. Check native Sites v28 source/recovery, current source HEAD and no other agent overlap. Check whether save-only moves configured source branch and whether automatic production publication is possible. Do not overwrite or force push.
+2. Safely port the reviewed native patch only to current verified Site source, never the public GitHub snapshot; run regressions and save an undeployed version with verified ID, preserving v28 rollback. Do not declare live if version save is blocked.
+3. Provision a fresh separate scoped token in the Site AND authorized Zeus runtime private secret managers without showing it in prompts, logs, GitHub or Telegram. No token rotation. Avoid exposing the broad bearer.
+4. On explicit owner production approval, deploy exact verified version and independently test 401 missing/wrong bearer, 200 authorized Pulse-only response and matching independently authenticated Hub Pulse date, zero writes and original Zeus command functionality.
+5. Never treat offline tests as live receipt, or a Replit Agent update in progress as a deployed bot.
+
+Rollback: retain the native v28 Sites deployment and original v28 source ZIP, revert any source branch commit, disable scoped route flag or revert to v28 saved version if necessary. Keep Replit deployment and source changes isolated until verified.
