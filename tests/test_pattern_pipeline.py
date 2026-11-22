@@ -14,6 +14,7 @@ from pattern_investigator.voice import send_owner_alert,health_message
 
 NOW = datetime(2026, 11, 22, 22, 0, tzinfo=timezone.utc)
 TOKEN = "x" * 48
+ROUTE = "z" * 48
 BOT = "123456:" + ("A"*32)
 
 def observed(i,**overrides):
@@ -43,30 +44,30 @@ class EyesTests(unittest.TestCase):
         def fake(req,timeout,cap):
             self.assertEqual(req.full_url,SITE_URL)
             self.assertEqual(req.get_method(),"GET")
-            self.assertEqual(req.headers["Authorization"],"Bearer "+TOKEN)
+            self.assertEqual(req.headers["Authorization"],"Bearer "+ROUTE)
             self.assertEqual(req.headers["Oai-sites-authorization"],"Bearer "+TOKEN)
             self.assertEqual(timeout,8)
             return (200,json.dumps(body).encode(),SITE_URL)
-        result=fetch_hub_evidence(siwc_token=TOKEN,route_secret=TOKEN,opener=fake,now=NOW)
+        result=fetch_hub_evidence(siwc_token=TOKEN,route_secret=ROUTE,opener=fake,now=NOW)
         self.assertEqual(result["transport_receipt"]["count"],1)
         self.assertFalse(result["transport_receipt"]["external_truth_verified"])
     def test_redirect_rejected(self):
         with self.assertRaises(EyesBlocked):
-            fetch_hub_evidence(siwc_token=TOKEN,route_secret=TOKEN,
+            fetch_hub_evidence(siwc_token=TOKEN,route_secret=ROUTE,
                  opener=lambda *a:(200,b"{}",SITE_URL+"/else"),now=NOW)
     def test_forged_or_stale_source_rejected(self):
         body={"ok":True,"source":"wrong","scope":"pattern_read_only_v1","checkedAt":NOW.isoformat(),"observations":[]}
         with self.assertRaises(EyesBlocked):
-            fetch_hub_evidence(siwc_token=TOKEN,route_secret=TOKEN,
+            fetch_hub_evidence(siwc_token=TOKEN,route_secret=ROUTE,
                opener=lambda *a:(200,json.dumps(body).encode(),SITE_URL),now=NOW)
         body["source"]="owner_authenticated_curated_hub_pattern_evidence"
         body["checkedAt"]=(NOW-timedelta(hours=3)).isoformat()
         with self.assertRaises(EyesBlocked):
-            fetch_hub_evidence(siwc_token=TOKEN,route_secret=TOKEN,
+            fetch_hub_evidence(siwc_token=TOKEN,route_secret=ROUTE,
                opener=lambda *a:(200,json.dumps(body).encode(),SITE_URL),now=NOW)
     def test_oversized_rejected(self):
         with self.assertRaises(EyesBlocked):
-            fetch_hub_evidence(siwc_token=TOKEN,route_secret=TOKEN,
+            fetch_hub_evidence(siwc_token=TOKEN,route_secret=ROUTE,
                opener=lambda *a:(200,b"0"*64001,SITE_URL),now=NOW)
 
 class BrainTests(unittest.TestCase):
