@@ -42,3 +42,34 @@ Official Sites source: https://learn.chatgpt.com/docs/sites/data-and-connections
 GitHub is PUBLIC. No private Hub content, credentials or personal records are committed. Isolated branch is reversible: close PR and delete branch without production impact. Original working Telegram, Hub, Custom Instructions, R2 records and Replit deployment are unchanged. Read-only Site integration belongs to the verified Site editor/owner, not a blind merge from GitHub. Follow existing Issues #2 and #6 and the canonical app-continuity skill.
 
 Next executable step: use Sites Work/Codex to inspect actual private Site source; port endpoint into verified source preview; conduct auth/negative-auth live tests; then obtain approval before any publishing.
+
+
+## Alternative discovery: native v28 already exposes a record read route (2026-11-22)
+
+**VERIFIED by a read-only audit of the actual native Sites v28 worker source at commit fa822b5311677880c6ed7bbf2b5799dfeb473980. NOT YET VERIFIED end to end from Zeus.**
+
+- Route: GET /api/v1/records/{type}/{id}. It reads the existing private R2 BUCKET and requires Authorization: Bearer plus an exact 64-character lowercase hexadecimal secret matching the Site's HUB_RECORD_READ_TOKEN setting. Missing/wrong bearer is HTTP 401 when configured; after authorization, invalid/missing record is HTTP 404; no writes.
+- Response: top-level ok and record. The record has type, id, content, createdAt, updatedAt, revision, storageVersion. Content is the FULL original object; record API accepts item, goal, checkin, planning, project-memory and pulse types. It has NO per-field redaction, no owner-identity header check, and the bearer allows ALL supported record types.
+- Anonymous negative tests from the authorized Windows device: missing bearer HTTP 401; fake bearer HTTP 401. Positive authenticated read from Zeus remains BLOCKED.
+- The public Sites homepage was observed readable without credentials; private data APIs denied anonymous reads. The owner must separately review the actual Site audience settings before deployment.
+- Native Sites deployed v28 source was found to differ from the public GitHub preview (including My Qualities and Review Loose Ends UI). Recovery versions v27/v28 exist, but archive byte equivalence and restore behavior were not verified. Do not replace the live source from GitHub.
+- Original metadata-only /api/zeus-link/probe approach in PR #13 / PR #16 remains an option if a least-privilege backend authorization boundary is required. It is NOT DEPLOYED.
+
+### Owner-only one-record client draft on this stacked branch
+
+- hub_native_record_probe.py adds an independent, disabled-by-default verifier for exactly ONE preconfigured item UUID using only GET. No model can choose record type or ID. It cannot list items or write records. It discards full response content without returning, logging or persisting it.
+- Existing owner-only Telegram /hublink routing is extended to support /hublink verify-native, which returns only an identity-match status, timestamp and hash of the configured ID; errors are generic and reveal neither secrets nor record contents.
+- It requires HUB_NATIVE_RECORD_CHECK_ENABLED=true, HUB_NATIVE_TEST_ITEM_ID=<owner-approved, low-sensitivity existing item UUID>, and HUB_RECORD_READ_TOKEN=<the actual exact-format bearer> in the authorized Zeus host's private secret store. HUB_SIWC_BYPASS_TOKEN can be provided separately if Sites requires it; never generate/rotate it merely for this test or skip the independent Hub bearer. Do NOT paste these secret values into ChatGPT, GitHub, Telegram or logs. No credential access or transfer has occurred.
+- Configuring the existing broad Site bearer in Zeus materially increases its exposure. Its broad scope cannot be fixed by filtering the Telegram output; therefore **obtain separate owner approval and independent security review before copying, configuring or executing the live credential**. Prefer a distinct restricted backend token if a native safe route becomes available.
+- Test one approved low-sensitivity item, compare exact type/ID against the authenticated Hub connector, and report only PASS/FAIL/BLOCKED. Do not send the record's text, full JSON or revision content back to Telegram or any AI model.
+- No Site code edits, new version, R2 mutation, production Zeus changes, automation, secret rotation, deployment, or new live connection result were performed by this branch. No continuous monitoring.
+
+### Staged acceptance
+
+1. Run offline Python regression and negative-auth tests (including missing token, invalid ID, method/host pinning, HTTP errors, invalid JSON, mismatched record, oversized response, secret non-disclosure). Check the exact GitHub Actions SHA.
+2. Verify the actual deployed Zeus source/revision and owner-only command routing, plus existing private token consumers. Avoid collision with any active Replit changes or Antigravity work.
+3. Obtain owner approval to configure a **single** controlled test with a broad token and to promote the new command. No unattended calls.
+4. Check authorized, server-side, one-record HTTP 200 + exact identity match; independently read the same item from the authenticated Hub connector. A missing/wrong bearer must remain HTTP 401.
+5. Keep writes unavailable. Obtain separate approval to develop a least-privilege single-note write path, if desired.
+
+Rollback: leave this branch unmerged and un-deployed or close the draft stacked PR; production continues unchanged.
