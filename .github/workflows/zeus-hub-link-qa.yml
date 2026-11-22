@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'hub_link_probe.py'
+      - 'hub_native_record_probe.py'
+      - 'tests/test_hub_native_record.py'
       - 'hub-link/**'
       - 'tests/test_hub_link_probe.py'
       - 'j_runtime.py'
@@ -30,5 +32,7 @@ jobs:
         run: node --test hub-link/test_site_probe.mjs
       - name: Zeus client and blocked-receipt tests
         run: python -m unittest discover -s tests -p 'test_hub_link_probe.py' -v
+      - name: Native Sites v28 single-item read client safety tests
+        run: python -m unittest discover -s tests -p 'test_hub_native_record.py' -v
       - name: Compile Zeus command routing without execution
-        run: python -m compileall -q hub_link_probe.py j_runtime.py telegram_agent_bot.py
+        run: python -m compileall -q hub_link_probe.py hub_native_record_probe.py j_runtime.py telegram_agent_bot.py
