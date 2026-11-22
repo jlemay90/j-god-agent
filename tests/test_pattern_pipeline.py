@@ -114,6 +114,16 @@ class LedgerTests(unittest.TestCase):
         self.assertNotIn("private secret",json.dumps(result))
         self.assertEqual(self.ledger.latest()["status"],"BLOCKED")
         self.assertEqual(watchdog_check(self.ledger,now=NOW)["check_status"],"FAILED_RUN")
+    def test_watchdog_waits_until_after_morning_grace_before_claiming_missing(self):
+        before=datetime(2026,11,23,7,0,tzinfo=timezone.utc) # 01:00 America/Chicago
+        result=watchdog_check(self.ledger,now=before)
+        self.assertEqual(result["check_status"],"AWAITING_SCHEDULED_RUN")
+        self.assertEqual(result["alert_status"],"NO_ALERT")
+        self.assertEqual(self.ledger.pending_alerts(),[])
+        after=datetime(2026,11,23,16,0,tzinfo=timezone.utc) # 10:00 America/Chicago
+        result=watchdog_check(self.ledger,now=after)
+        self.assertEqual(result["check_status"],"MISSING_RUN")
+        self.assertEqual(len(self.ledger.pending_alerts()),1)
     def test_watchdog_detects_missing_stale_and_deduplicates(self):
         self.assertEqual(watchdog_check(self.ledger,now=NOW)["check_status"],"MISSING_RUN")
         self.assertEqual(watchdog_check(self.ledger,now=NOW)["check_status"],"MISSING_RUN")
